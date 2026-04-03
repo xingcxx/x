@@ -14,10 +14,19 @@ proxies:
       - h3
     skip-cert-verify: true
 
+  - name: "US-Webshare"
+    type: socks5
+    server: 208.66.77.180
+    port: 5847
+    username: khjwewyn
+    password: i0p0rds83yjy
+    dialer-proxy: "HK-Hysteria2"
+
 proxy-groups:
   - name: "Proxy"
     type: select
     proxies:
+      - "US-Webshare"
       - "HK-Hysteria2"
       - DIRECT
 
