@@ -14,7 +14,7 @@ proxies:
       - h3
     skip-cert-verify: true
 
-  - name: "US-Webshare"
+  - name: "US-Webshare-Chain"
     type: socks5
     server: 208.66.77.180
     port: 5847
@@ -26,16 +26,9 @@ proxy-groups:
   - name: "Proxy"
     type: select
     proxies:
-      - "US-Chain"
+      - "US-Webshare-Chain"
       - "HK-Hysteria2"
-      - "US-Webshare"
       - DIRECT
-
-  - name: "US-Chain"
-    type: relay
-    proxies:
-      - "HK-Hysteria2"
-      - "US-Webshare"
 
 rules:
   - GEOIP,CN,DIRECT
