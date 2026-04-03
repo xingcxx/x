@@ -42,7 +42,7 @@ geox-url:
 
 proxies:
   - {name: "hysteria2香港", type: hysteria2, server: 156.226.171.205, port: 3691, password: a35a006e-5f98-4e1f-b1ea-641d039193e9, alpn: [h3], sni: 156.226.171.205, skip-cert-verify: true, udp: true}
-  - {name: "US-Webshare", type: socks5, server: 208.66.77.180, port: 5847, username: a2hqd2V3eW46aTBwMHJkczgzeWp5, udp: true, dialer-proxy: "🇭🇰 香港中转"}
+  - {name: "US-Webshare", type: socks5, server: 208.66.77.180, port: 5847, username: khjwewyn, password: i0p0rds83yjy, udp: true, dialer-proxy: "🇭🇰 香港中转"}
 
 proxy-groups:
   - name: "🚀 节点选择"
