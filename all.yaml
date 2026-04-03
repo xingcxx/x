@@ -5,19 +5,37 @@ mode: rule
 log-level: info
 
 proxies:
+  - name: "HK-Hysteria2"
+    type: hysteria2
+    server: 156.226.171.205
+    port: 3691
+    password: a35a006e-5f98-4e1f-b1ea-641d039193e9
+    alpn:
+      - h3
+    skip-cert-verify: true
+
   - name: "US-Webshare"
     type: socks5
     server: 208.66.77.180
     port: 5847
     username: khjwewyn
     password: i0p0rds83yjy
+    dialer-proxy: "HK-Hysteria2"
 
 proxy-groups:
   - name: "Proxy"
     type: select
     proxies:
+      - "US-Chain"
+      - "HK-Hysteria2"
       - "US-Webshare"
       - DIRECT
+
+  - name: "US-Chain"
+    type: relay
+    proxies:
+      - "HK-Hysteria2"
+      - "US-Webshare"
 
 rules:
   - GEOIP,CN,DIRECT
