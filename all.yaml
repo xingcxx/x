@@ -6,6 +6,9 @@ unified-delay: true
 tcp-concurrent: true
 find-process-mode: strict
 
+listeners:
+  - {name: "mixed0", type: mixed, port: 3691, proxy: hysteria2香港}
+
 dns:
   enable: true
   listen: "127.0.0.1:5335"
@@ -42,19 +45,19 @@ geox-url:
 
 proxies:
   - {name: "hysteria2香港", type: hysteria2, server: 156.226.171.205, port: 3691, password: a35a006e-5f98-4e1f-b1ea-641d039193e9, alpn: [h3], sni: 156.226.171.205, skip-cert-verify: true, udp: true}
-  - {name: "US-Webshare", type: socks5, server: 208.66.77.180, port: 5847, username: khjwewyn, password: i0p0rds83yjy, udp: true, dialer-proxy: "🇭🇰 香港中转"}
+  - {name: "SOCKS-208.66.77.180:5847", type: socks5, server: 208.66.77.180, port: 5847, username: khjwewyn, password: i0p0rds83yjy, udp: true, dialer-proxy: "🇺🇸 美国中转"}
 
 proxy-groups:
   - name: "🚀 节点选择"
     type: select
-    proxies: ["⚡ 自动选择", DIRECT, REJECT, hysteria2香港, US-Webshare]
+    proxies: ["⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-208.66.77.180:5847"]
   - name: "⚡ 自动选择"
     type: url-test
-    proxies: [hysteria2香港, US-Webshare]
+    proxies: [hysteria2香港, "SOCKS-208.66.77.180:5847"]
     url: "https://www.gstatic.com/generate_204"
     interval: 300
     lazy: false
-  - name: "🇭🇰 香港中转"
+  - name: "🇺🇸 美国中转"
     type: select
     proxies: [hysteria2香港]
   - name: "🛑 广告拦截"
@@ -62,94 +65,94 @@ proxy-groups:
     proxies: [REJECT, DIRECT, "🚀 节点选择"]
   - name: "🤖 AI 服务"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, US-Webshare]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-208.66.77.180:5847"]
   - name: "📹 油管视频"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, US-Webshare]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-208.66.77.180:5847"]
   - name: "🔍 谷歌服务"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, US-Webshare]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-208.66.77.180:5847"]
   - name: "Ⓜ️ 微软服务"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, US-Webshare]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-208.66.77.180:5847"]
   - name: "🍏 苹果服务"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, US-Webshare]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-208.66.77.180:5847"]
   - name: "📲 电报消息"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, US-Webshare]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-208.66.77.180:5847"]
   - name: "🐦 推特/X"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, US-Webshare]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-208.66.77.180:5847"]
   - name: "📘 Meta 系"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, US-Webshare]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-208.66.77.180:5847"]
   - name: "🎙️ Discord"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, US-Webshare]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-208.66.77.180:5847"]
   - name: "💬 其他社交"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, US-Webshare]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-208.66.77.180:5847"]
   - name: "🎬 奈飞"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, US-Webshare]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-208.66.77.180:5847"]
   - name: "🏰 迪士尼+"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, US-Webshare]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-208.66.77.180:5847"]
   - name: "📺 欧美流媒体"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, US-Webshare]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-208.66.77.180:5847"]
   - name: "🎌 亚洲流媒体"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, US-Webshare]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-208.66.77.180:5847"]
   - name: "🎮 Steam"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, US-Webshare]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-208.66.77.180:5847"]
   - name: "🖥️ PC 游戏"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, US-Webshare]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-208.66.77.180:5847"]
   - name: "🎯 主机游戏"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, US-Webshare]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-208.66.77.180:5847"]
   - name: "🐱 代码托管"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, US-Webshare]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-208.66.77.180:5847"]
   - name: "☁️ 云服务"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, US-Webshare]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-208.66.77.180:5847"]
   - name: "🛠️ 开发工具"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, US-Webshare]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-208.66.77.180:5847"]
   - name: "💾 网盘存储"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, US-Webshare]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-208.66.77.180:5847"]
   - name: "💳 支付平台"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, US-Webshare]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-208.66.77.180:5847"]
   - name: "₿ 加密货币"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, US-Webshare]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-208.66.77.180:5847"]
   - name: "📚 教育学术"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, US-Webshare]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-208.66.77.180:5847"]
   - name: "📰 新闻资讯"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, US-Webshare]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-208.66.77.180:5847"]
   - name: "🛒 海淘购物"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, US-Webshare]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-208.66.77.180:5847"]
   - name: "🏠 私有网络"
     type: select
-    proxies: [DIRECT, REJECT, "🚀 节点选择", "⚡ 自动选择", hysteria2香港, US-Webshare]
+    proxies: [DIRECT, REJECT, "🚀 节点选择", "⚡ 自动选择", hysteria2香港, "SOCKS-208.66.77.180:5847"]
   - name: "🔒 国内服务"
     type: select
-    proxies: [DIRECT, REJECT, "🚀 节点选择", "⚡ 自动选择", hysteria2香港, US-Webshare]
+    proxies: [DIRECT, REJECT, "🚀 节点选择", "⚡ 自动选择", hysteria2香港, "SOCKS-208.66.77.180:5847"]
   - name: "🌍 非中国"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, US-Webshare]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-208.66.77.180:5847"]
   - name: "🐟 漏网之鱼"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, US-Webshare]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-208.66.77.180:5847"]
 
 rule-providers:
   category-ads-all: {type: http, behavior: domain, url: "https://github.com/MetaCubeX/meta-rules-dat/raw/refs/heads/meta/geo/geosite/category-ads-all.mrs", path: ./ruleset/category-ads-all.mrs, interval: 86400, format: mrs}
