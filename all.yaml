@@ -1,8 +1,8 @@
-port: 7890
-socks-port: 7891
+mixed-port: 7890
 allow-lan: true
 mode: rule
 log-level: info
+unified-delay: true
 
 proxies:
   - name: "HK-Hysteria2"
@@ -14,19 +14,10 @@ proxies:
       - h3
     skip-cert-verify: true
 
-  - name: "US-Webshare-Chain"
-    type: socks5
-    server: 208.66.77.180
-    port: 5847
-    username: khjwewyn
-    password: i0p0rds83yjy
-    dialer-proxy: "HK-Hysteria2"
-
 proxy-groups:
   - name: "Proxy"
     type: select
     proxies:
-      - "US-Webshare-Chain"
       - "HK-Hysteria2"
       - DIRECT
 
