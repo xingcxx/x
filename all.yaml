@@ -1,1 +1,24 @@
+port: 7890
+socks-port: 7891
+allow-lan: true
+mode: rule
+log-level: info
 
+proxies:
+  - name: "US-Webshare"
+    type: socks5
+    server: 208.66.77.180
+    port: 5847
+    username: khjwewyn
+    password: i0p0rds83yjy
+
+proxy-groups:
+  - name: "Proxy"
+    type: select
+    proxies:
+      - "US-Webshare"
+      - DIRECT
+
+rules:
+  - GEOIP,CN,DIRECT
+  - MATCH,Proxy
