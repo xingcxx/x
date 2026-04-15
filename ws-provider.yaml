@@ -41,21 +41,20 @@ geox-url:
   asn: https://github.com/xishang0128/geoip/releases/download/latest/GeoLite2-ASN.mmdb
 
 proxies:
-  - {name: "HTTP-p.webshare.io:80", type: http, server: p.webshare.io, port: 80, username: khjwewyn-1, password: i0p0rds83yjy, tls: false, dialer-proxy: "🇭🇰 香港中转"}
-  - {name: "SOCKS-p.webshare.io:1080", type: socks5, server: p.webshare.io, port: 1080, username: khjwewyn-1, password: i0p0rds83yjy, udp: true, dialer-proxy: "🇭🇰 香港中转"}
   - {name: "hysteria2香港", type: hysteria2, server: 156.226.171.205, port: 3691, password: a35a006e-5f98-4e1f-b1ea-641d039193e9, alpn: [h3], sni: 156.226.171.205, skip-cert-verify: true, udp: true}
+  - {name: "SOCKS-p.webshare.io:1080", type: socks5, server: p.webshare.io, port: 1080, username: khjwewyn-1, password: i0p0rds83yjy, udp: true, dialer-proxy: "🇺🇸 美国中转"}
 
 proxy-groups:
   - name: "🚀 节点选择"
     type: select
-    proxies: ["⚡ 自动选择", DIRECT, REJECT, "HTTP-p.webshare.io:80", "SOCKS-p.webshare.io:1080", hysteria2香港]
+    proxies: ["⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-p.webshare.io:1080"]
   - name: "⚡ 自动选择"
     type: url-test
-    proxies: ["HTTP-p.webshare.io:80", "SOCKS-p.webshare.io:1080", hysteria2香港]
+    proxies: [hysteria2香港, "SOCKS-p.webshare.io:1080"]
     url: "https://www.gstatic.com/generate_204"
     interval: 300
     lazy: false
-  - name: "🇭🇰 香港中转"
+  - name: "🇺🇸 美国中转"
     type: select
     proxies: [hysteria2香港]
   - name: "🛑 广告拦截"
@@ -63,37 +62,37 @@ proxy-groups:
     proxies: [REJECT, DIRECT, "🚀 节点选择"]
   - name: "🤖 AI 服务"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, "HTTP-p.webshare.io:80", "SOCKS-p.webshare.io:1080", hysteria2香港]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-p.webshare.io:1080"]
   - name: "📹 油管视频"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, "HTTP-p.webshare.io:80", "SOCKS-p.webshare.io:1080", hysteria2香港]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-p.webshare.io:1080"]
   - name: "🔍 谷歌服务"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, "HTTP-p.webshare.io:80", "SOCKS-p.webshare.io:1080", hysteria2香港]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-p.webshare.io:1080"]
   - name: "Ⓜ️ 微软服务"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, "HTTP-p.webshare.io:80", "SOCKS-p.webshare.io:1080", hysteria2香港]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-p.webshare.io:1080"]
   - name: "🍏 苹果服务"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, "HTTP-p.webshare.io:80", "SOCKS-p.webshare.io:1080", hysteria2香港]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-p.webshare.io:1080"]
   - name: "📲 电报消息"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, "HTTP-p.webshare.io:80", "SOCKS-p.webshare.io:1080", hysteria2香港]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-p.webshare.io:1080"]
   - name: "🐱 代码托管"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, "HTTP-p.webshare.io:80", "SOCKS-p.webshare.io:1080", hysteria2香港]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-p.webshare.io:1080"]
   - name: "🏠 私有网络"
     type: select
-    proxies: [DIRECT, REJECT, "🚀 节点选择", "⚡ 自动选择", "HTTP-p.webshare.io:80", "SOCKS-p.webshare.io:1080", hysteria2香港]
+    proxies: [DIRECT, REJECT, "🚀 节点选择", "⚡ 自动选择", hysteria2香港, "SOCKS-p.webshare.io:1080"]
   - name: "🔒 国内服务"
     type: select
-    proxies: [DIRECT, REJECT, "🚀 节点选择", "⚡ 自动选择", "HTTP-p.webshare.io:80", "SOCKS-p.webshare.io:1080", hysteria2香港]
+    proxies: [DIRECT, REJECT, "🚀 节点选择", "⚡ 自动选择", hysteria2香港, "SOCKS-p.webshare.io:1080"]
   - name: "🌍 非中国"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, "HTTP-p.webshare.io:80", "SOCKS-p.webshare.io:1080", hysteria2香港]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-p.webshare.io:1080"]
   - name: "🐟 漏网之鱼"
     type: select
-    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, "HTTP-p.webshare.io:80", "SOCKS-p.webshare.io:1080", hysteria2香港]
+    proxies: ["🚀 节点选择", "⚡ 自动选择", DIRECT, REJECT, hysteria2香港, "SOCKS-p.webshare.io:1080"]
 
 rule-providers:
   category-ads-all: {type: http, behavior: domain, url: "https://github.com/MetaCubeX/meta-rules-dat/raw/refs/heads/meta/geo/geosite/category-ads-all.mrs", path: ./ruleset/category-ads-all.mrs, interval: 86400, format: mrs}
