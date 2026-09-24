@@ -256,6 +256,22 @@ function main(config) {
 
     "endpoint-independent-nat": true,
 
+    // Equivalent to Shadowrocket's `tun-excluded-routes`: private LAN traffic
+    // must stay on the physical Wi-Fi interface and must not enter the VPN
+    // tunnel.  This is required for mac.024657.xyz -> 192.168.0.61 to work
+    // while Clash Mi is connected on the same Wi-Fi network.
+    "route-exclude-address": [
+
+      "10.0.0.0/8",
+      "100.64.0.0/10",
+      "127.0.0.0/8",
+      "169.254.0.0/16",
+      "172.16.0.0/12",
+      "192.168.0.0/16",
+      "224.0.0.0/4"
+
+    ],
+
     "mtu": 1500,
 
     "auto-redirect": false,
