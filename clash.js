@@ -41,10 +41,10 @@ function main(config) {
 
   config["log-level"] = "error";
 
-  // Keep IPv6 inside the TUN routing table.  The DNS server below still
-  // suppresses AAAA answers so applications do not prefer a native IPv6 path.
-  // `tun.inet6-address` is ignored by Mihomo unless this is true.
-  config["ipv6"] = true;
+  // Avoid advertising native IPv6 to applications.  On iOS, the VPN
+  // extension owns the TUN routes; the core does not need a custom IPv6 TUN
+  // address for Fake-IP DNS interception.
+  config["ipv6"] = false;
 
   config["allow-lan"] = false;
 
@@ -90,10 +90,7 @@ function main(config) {
 
     "enhanced-mode": "fake-ip",
 
-    // Keep fake addresses separate from the TUN interface subnets.
     "fake-ip-range": "198.18.0.1/16",
-
-    "fake-ip-range6": "fdfe:dcba:9877::1/64",
 
     "fake-ip-filter": [
 
@@ -133,17 +130,17 @@ function main(config) {
 
     ],
 
-    // DNS transport follows `rules`, while `#一键代理` makes the
-    // non-CN path explicit instead of relying on the DNS endpoint's own
-    // GeoSite classification.
+    // Imported Clash Mi profiles support this setting.  Global DoH
+    // queries follow the normal routing rules and therefore the final proxy
+    // group, while the explicit CN/private policy remains direct below.
     "respect-rules": true,
 
     // Do not use fallback: it duplicates queries to a second resolver
     // and can disclose a domain to the wrong DNS path.
     "nameserver": [
 
-      "https://cloudflare-dns.com/dns-query#一键代理",
-      "https://dns.google/dns-query#一键代理"
+      "https://1.1.1.1/dns-query",
+      "https://9.9.9.9/dns-query"
 
     ],
 
@@ -158,8 +155,8 @@ function main(config) {
 
       "geosite:geolocation-!cn": [
 
-        "https://cloudflare-dns.com/dns-query#一键代理",
-        "https://dns.google/dns-query#一键代理"
+        "https://1.1.1.1/dns-query",
+        "https://9.9.9.9/dns-query"
 
       ]
 
@@ -172,11 +169,18 @@ function main(config) {
       "tls://223.5.5.5:853",
       "tls://1.12.12.12:853"
 
-    ]
+    ],
 
-    // Deliberately omit direct-nameserver.  It is an additional DNS
-    // branch that can bypass the policy above; CN/private queries are already
-    // handled by nameserver-policy, and every other query is pinned to proxy.
+    // A dedicated encrypted resolver for direct traffic is compatible with
+    // split-DNS.  `follow-policy` keeps CN/private policy above authoritative.
+    "direct-nameserver": [
+
+      "https://dns.alidns.com/dns-query",
+      "https://doh.pub/dns-query"
+
+    ],
+
+    "direct-nameserver-follow-policy": true
 
   };
 
@@ -191,8 +195,10 @@ function main(config) {
 
     "device": "Clash Mi",
 
-    // Use the native system stack for the Apple Network Extension.
-    "stack": "system",
+    // Mixed is the portable Mihomo TUN stack used by no-leak
+    // overwrite profiles; it avoids the iOS route loop caused by manually
+    // supplied route-address entries.
+    "stack": "mixed",
 
     // Catch UDP and TCP DNS from every interface.  A single IPv4 UDP
     // entry leaves TCP DNS and IPv6-interface DNS able to bypass TUN.
@@ -209,32 +215,14 @@ function main(config) {
     // automatically. Do not add custom route-address entries on Apple.
     "auto-detect-interface": true,
 
-    "strict-route": true,
+    // iOS installs VPN routes itself.  Enabling strict-route or
+    // manually specifying IPv4/IPv6 routes here can send the tunnel's own
+    // transport back into TUN and cause a reconnect loop.
+    "strict-route": false,
 
-    "mtu": 1280,
+    "endpoint-independent-nat": true,
 
-    // Give TUN independent IPv4/IPv6 addresses.  The previous profile had no
-    // IPv6 TUN address, allowing the phone's carrier IPv6 resolver and traffic
-    // to remain outside the tunnel.
-    "inet4-address": [
-
-      "198.19.0.1/30"
-
-    ],
-
-    "inet6-address": [
-
-      "fdfe:dcba:9876::1/126"
-
-    ],
-
-
-    // Loopback endpoint supplied to the TUN implementation.
-    "loopback-address": [
-
-      "10.7.0.1"
-
-    ],
+    "mtu": 1500,
 
     "auto-redirect": false,
 
