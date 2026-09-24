@@ -191,7 +191,8 @@ function main(config) {
 
     "device": "Clash Mi",
 
-    "stack": "gvisor",
+    // Use the native system stack for the Apple Network Extension.
+    "stack": "system",
 
     // Catch UDP and TCP DNS from every interface.  A single IPv4 UDP
     // entry leaves TCP DNS and IPv6-interface DNS able to bypass TUN.
@@ -204,9 +205,9 @@ function main(config) {
 
     "auto-route": true,
 
-    // Apple Network Extension manages the physical Wi-Fi/cellular interface.
-    // Enabling core-side detection here can choose the tunnel itself and loop.
-    "auto-detect-interface": false,
+    // When both Wi-Fi and cellular are available, select the physical egress
+    // automatically. Do not add custom route-address entries on Apple.
+    "auto-detect-interface": true,
 
     "strict-route": true,
 
@@ -227,6 +228,13 @@ function main(config) {
 
     ],
 
+
+    // Loopback endpoint supplied to the TUN implementation.
+    "loopback-address": [
+
+      "10.7.0.1"
+
+    ],
 
     "auto-redirect": false,
 
