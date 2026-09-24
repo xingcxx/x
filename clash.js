@@ -69,6 +69,10 @@ function main(config) {
 
   // ================================================================
   // 3. DNS
+  //
+  // All upstream DNS uses DoH/DoT.  `respect-rules` makes the DNS
+  // connection itself follow this profile's routing rules; the sole
+  // unavoidable bootstrap path (proxy host names) is also encrypted.
   // ================================================================
 
   config["dns"] = {
@@ -113,37 +117,39 @@ function main(config) {
 
     ],
 
+    // Resolve DNS-server and proxy-server host names without sending
+    // plaintext UDP/53 traffic.  These are numeric IP endpoints so no
+    // system DNS lookup is needed before the profile is available.
     "default-nameserver": [
 
-      "223.5.5.5",
-      "119.29.29.29"
+      "tls://223.5.5.5:853",
+      "tls://1.12.12.12:853"
 
     ],
 
+    // DNS transport follows `rules`: global lookups use the proxy and
+    // CN/private lookups use the explicit policy below.
+    "respect-rules": true,
+
+    // Do not use fallback: it duplicates queries to a second resolver
+    // and can disclose a domain to the wrong DNS path.
     "nameserver": [
 
-      "https://dns.alidns.com/dns-query",
-      "https://doh.pub/dns-query"
+      "https://cloudflare-dns.com/dns-query",
+      "https://dns.google/dns-query"
 
     ],
 
     "nameserver-policy": {
 
-      "geosite:cn": [
+      "geosite:cn,private": [
 
         "https://dns.alidns.com/dns-query",
         "https://doh.pub/dns-query"
 
       ],
 
-      "geosite:private": [
-
-        "https://dns.alidns.com/dns-query",
-        "https://doh.pub/dns-query"
-
-      ],
-
-      "geolocation-!cn": [
+      "geosite:geolocation-!cn": [
 
         "https://cloudflare-dns.com/dns-query",
         "https://dns.google/dns-query"
@@ -152,10 +158,12 @@ function main(config) {
 
     },
 
+    // A proxy endpoint must be resolved before its proxy can connect.
+    // Keep that bootstrap query encrypted and independent of system DNS.
     "proxy-server-nameserver": [
 
-      "https://dns.alidns.com/dns-query",
-      "https://doh.pub/dns-query"
+      "tls://223.5.5.5:853",
+      "tls://1.12.12.12:853"
 
     ],
 
@@ -166,40 +174,9 @@ function main(config) {
 
     ],
 
-    "fallback": [
-
-      "https://cloudflare-dns.com/dns-query",
-      "https://dns.google/dns-query"
-
-    ],
-
-    "fallback-filter": {
-
-      "geoip": true,
-
-      "geoip-code": "CN",
-
-      "geosite": [
-
-        "gfw"
-
-      ],
-
-      "domain": [
-
-        "+.google.com",
-        "+.googleapis.com",
-        "+.googlevideo.com",
-        "+.youtube.com",
-        "+.github.com",
-        "+.openai.com",
-        "+.chatgpt.com",
-        "+.anthropic.com",
-        "+.claude.ai"
-
-      ]
-
-    }
+    // Keep direct DNS aligned with the same split-DNS policy rather than
+    // bypassing it with a separate resolver path.
+    "direct-nameserver-follow-policy": true
 
   };
 
@@ -216,9 +193,12 @@ function main(config) {
 
     "stack": "gvisor",
 
+    // Catch UDP and TCP DNS from every interface.  A single IPv4 UDP
+    // entry leaves TCP DNS and IPv6-interface DNS able to bypass TUN.
     "dns-hijack": [
 
-      "0.0.0.0:53"
+      "any:53",
+      "tcp://any:53"
 
     ],
 
