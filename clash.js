@@ -99,6 +99,10 @@ function main(config) {
       "+.localhost",
       "+.home.arpa",
 
+      // The Mac SSH endpoint resolves to a private LAN address.  It must
+      // retain its real address rather than receive a Fake-IP mapping.
+      "mac.024657.xyz",
+
       "time.*.com",
       "time.*.gov",
       "pool.ntp.org",
@@ -145,6 +149,14 @@ function main(config) {
     ],
 
     "nameserver-policy": {
+
+      // Same behavior as Shadowrocket's `server:system`: resolve the local
+      // Mac SSH host through the current LAN resolver, never through proxy DoH.
+      "mac.024657.xyz": [
+
+        "system"
+
+      ],
 
       "geosite:cn,private": [
 
@@ -1807,6 +1819,12 @@ function main(config) {
     // --------------------------------------------------------------
     // Private / LAN
     // --------------------------------------------------------------
+
+    // Shadowrocket uses an exact direct rule plus `server:system` for this
+    // private-LAN SSH hostname.  Keep this before the 024657 proxy suffix.
+    "DOMAIN,mac.024657.xyz,DIRECT",
+
+    "DOMAIN-SUFFIX,024657.xyz,一键代理",
 
     "DOMAIN-SUFFIX,lan,DIRECT",
 
