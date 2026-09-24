@@ -41,7 +41,10 @@ function main(config) {
 
   config["log-level"] = "error";
 
-  config["ipv6"] = false;
+  // Keep IPv6 inside the TUN routing table.  The DNS server below still
+  // suppresses AAAA answers so applications do not prefer a native IPv6 path.
+  // `tun.inet6-address` is ignored by Mihomo unless this is true.
+  config["ipv6"] = true;
 
   config["allow-lan"] = false;
 
@@ -87,7 +90,10 @@ function main(config) {
 
     "enhanced-mode": "fake-ip",
 
-    "fake-ip-range": "172.19.0.1/16",
+    // Keep fake addresses separate from the TUN interface subnets.
+    "fake-ip-range": "198.18.0.1/16",
+
+    "fake-ip-range6": "fdfe:dcba:9877::1/64",
 
     "fake-ip-filter": [
 
@@ -127,16 +133,17 @@ function main(config) {
 
     ],
 
-    // DNS transport follows `rules`: global lookups use the proxy and
-    // CN/private lookups use the explicit policy below.
+    // DNS transport follows `rules`, while `#一键代理` makes the
+    // non-CN path explicit instead of relying on the DNS endpoint's own
+    // GeoSite classification.
     "respect-rules": true,
 
     // Do not use fallback: it duplicates queries to a second resolver
     // and can disclose a domain to the wrong DNS path.
     "nameserver": [
 
-      "https://cloudflare-dns.com/dns-query",
-      "https://dns.google/dns-query"
+      "https://cloudflare-dns.com/dns-query#一键代理",
+      "https://dns.google/dns-query#一键代理"
 
     ],
 
@@ -151,8 +158,8 @@ function main(config) {
 
       "geosite:geolocation-!cn": [
 
-        "https://cloudflare-dns.com/dns-query",
-        "https://dns.google/dns-query"
+        "https://cloudflare-dns.com/dns-query#一键代理",
+        "https://dns.google/dns-query#一键代理"
 
       ]
 
@@ -165,18 +172,11 @@ function main(config) {
       "tls://223.5.5.5:853",
       "tls://1.12.12.12:853"
 
-    ],
+    ]
 
-    "direct-nameserver": [
-
-      "https://dns.alidns.com/dns-query",
-      "https://doh.pub/dns-query"
-
-    ],
-
-    // Keep direct DNS aligned with the same split-DNS policy rather than
-    // bypassing it with a separate resolver path.
-    "direct-nameserver-follow-policy": true
+    // Deliberately omit direct-nameserver.  It is an additional DNS
+    // branch that can bypass the policy above; CN/private queries are already
+    // handled by nameserver-policy, and every other query is pinned to proxy.
 
   };
 
@@ -204,15 +204,37 @@ function main(config) {
 
     "auto-route": true,
 
-    "auto-detect-interface": false,
+    // Let the mobile client select Wi-Fi or cellular egress correctly.
+    "auto-detect-interface": true,
 
     "strict-route": true,
 
     "mtu": 1280,
 
+    // Give TUN independent IPv4/IPv6 addresses.  The previous profile had no
+    // IPv6 TUN address, allowing the phone's carrier IPv6 resolver and traffic
+    // to remain outside the tunnel.
     "inet4-address": [
 
-      "172.19.0.1/30"
+      "198.19.0.1/30"
+
+    ],
+
+    "inet6-address": [
+
+      "fdfe:dcba:9876::1/126"
+
+    ],
+
+    // Explicit dual-stack routes are used instead of relying on a platform
+    // default route.  Together with strict-route they prevent native IPv6
+    // fallback from bypassing the VPN/TUN interface.
+    "route-address": [
+
+      "0.0.0.0/1",
+      "128.0.0.0/1",
+      "::/1",
+      "8000::/1"
 
     ],
 
