@@ -70,24 +70,17 @@ function main(config) {
   };
 
 
-  // iOS apps use the DNS server installed by the VPN.  A static hosts entry
-  // takes precedence over that DNS path, so the SSH client still reaches the
-  // Mac while Clash Mi is connected.  Update this only if the Mac LAN IP
-  // changes; the current address is confirmed on this Mac's Wi-Fi interface.
-
-  var configuredHosts =
-    config["hosts"] && typeof config["hosts"] === "object" &&
+  // The SSH hostname is a Cloudflare remote endpoint.  Remove a stale local
+  // hosts override if the imported subscription happens to contain one.
+  if (
+    config["hosts"] &&
+    typeof config["hosts"] === "object" &&
     !Array.isArray(config["hosts"])
-      ? JSON.parse(JSON.stringify(config["hosts"]))
-      : {};
+  ) {
 
+    delete config["hosts"]["mac.024657.xyz"];
 
-  configuredHosts["mac.024657.xyz"] =
-    "192.168.0.61";
-
-
-  config["hosts"] =
-    configuredHosts;
+  }
 
 
   // ================================================================
@@ -118,10 +111,6 @@ function main(config) {
       "+.local",
       "+.localhost",
       "+.home.arpa",
-
-      // The Mac SSH endpoint resolves to a private LAN address.  It must
-      // retain its real address rather than receive a Fake-IP mapping.
-      "mac.024657.xyz",
 
       "time.*.com",
       "time.*.gov",
@@ -169,16 +158,6 @@ function main(config) {
     ],
 
     "nameserver-policy": {
-
-      // Resolve the Mac SSH name with the direct encrypted resolvers.  Clash Mi
-      // does not consistently expose the iOS `system` resolver to TUN clients;
-      // using the same dynamic public record avoids an `unknown host` result.
-      "mac.024657.xyz": [
-
-        "https://dns.alidns.com/dns-query",
-        "https://doh.pub/dns-query"
-
-      ],
 
       "geosite:cn,private": [
 
@@ -255,22 +234,6 @@ function main(config) {
     "strict-route": false,
 
     "endpoint-independent-nat": true,
-
-    // Equivalent to Shadowrocket's `tun-excluded-routes`: private LAN traffic
-    // must stay on the physical Wi-Fi interface and must not enter the VPN
-    // tunnel.  This is required for mac.024657.xyz -> 192.168.0.61 to work
-    // while Clash Mi is connected on the same Wi-Fi network.
-    "route-exclude-address": [
-
-      "10.0.0.0/8",
-      "100.64.0.0/10",
-      "127.0.0.0/8",
-      "169.254.0.0/16",
-      "172.16.0.0/12",
-      "192.168.0.0/16",
-      "224.0.0.0/4"
-
-    ],
 
     "mtu": 1500,
 
@@ -1858,13 +1821,12 @@ function main(config) {
     // Private / LAN
     // --------------------------------------------------------------
 
-    // Shadowrocket uses an exact direct rule plus `server:system` for this
-    // private-LAN SSH hostname.  Keep this before the 024657 proxy suffix.
-    "DOMAIN,mac.024657.xyz,DIRECT",
+    // mac.024657.xyz is the remote Cloudflare endpoint.  Do not replace it
+    // with a LAN address or bypass the tunnel: it must use the normal proxy
+    // path just like the other 024657.xyz subdomains.
+    "DOMAIN,mac.024657.xyz,一键代理",
 
     "DOMAIN-SUFFIX,024657.xyz,一键代理",
-
-    "IP-CIDR,192.168.0.61/32,DIRECT,no-resolve",
 
     "DOMAIN-SUFFIX,lan,DIRECT",
 
