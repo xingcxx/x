@@ -204,8 +204,9 @@ function main(config) {
 
     "auto-route": true,
 
-    // Let the mobile client select Wi-Fi or cellular egress correctly.
-    "auto-detect-interface": true,
+    // Apple Network Extension manages the physical Wi-Fi/cellular interface.
+    // Enabling core-side detection here can choose the tunnel itself and loop.
+    "auto-detect-interface": false,
 
     "strict-route": true,
 
@@ -226,17 +227,6 @@ function main(config) {
 
     ],
 
-    // Explicit dual-stack routes are used instead of relying on a platform
-    // default route.  Together with strict-route they prevent native IPv6
-    // fallback from bypassing the VPN/TUN interface.
-    "route-address": [
-
-      "0.0.0.0/1",
-      "128.0.0.0/1",
-      "::/1",
-      "8000::/1"
-
-    ],
 
     "auto-redirect": false,
 
