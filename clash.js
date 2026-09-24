@@ -70,6 +70,26 @@ function main(config) {
   };
 
 
+  // iOS apps use the DNS server installed by the VPN.  A static hosts entry
+  // takes precedence over that DNS path, so the SSH client still reaches the
+  // Mac while Clash Mi is connected.  Update this only if the Mac LAN IP
+  // changes; the current address is confirmed on this Mac's Wi-Fi interface.
+
+  var configuredHosts =
+    config["hosts"] && typeof config["hosts"] === "object" &&
+    !Array.isArray(config["hosts"])
+      ? JSON.parse(JSON.stringify(config["hosts"]))
+      : {};
+
+
+  configuredHosts["mac.024657.xyz"] =
+    "192.168.0.61";
+
+
+  config["hosts"] =
+    configuredHosts;
+
+
   // ================================================================
   // 3. DNS
   //
@@ -1827,6 +1847,8 @@ function main(config) {
     "DOMAIN,mac.024657.xyz,DIRECT",
 
     "DOMAIN-SUFFIX,024657.xyz,一键代理",
+
+    "IP-CIDR,192.168.0.61/32,DIRECT,no-resolve",
 
     "DOMAIN-SUFFIX,lan,DIRECT",
 
