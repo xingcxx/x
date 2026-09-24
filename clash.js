@@ -150,11 +150,13 @@ function main(config) {
 
     "nameserver-policy": {
 
-      // Same behavior as Shadowrocket's `server:system`: resolve the local
-      // Mac SSH host through the current LAN resolver, never through proxy DoH.
+      // Resolve the Mac SSH name with the direct encrypted resolvers.  Clash Mi
+      // does not consistently expose the iOS `system` resolver to TUN clients;
+      // using the same dynamic public record avoids an `unknown host` result.
       "mac.024657.xyz": [
 
-        "system"
+        "https://dns.alidns.com/dns-query",
+        "https://doh.pub/dns-query"
 
       ],
 
