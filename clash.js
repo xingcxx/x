@@ -847,105 +847,28 @@ function main(config) {
 
 
   // ================================================================
-  // 16. Preserve airport basic groups and their dependencies
+  // 16. Preserve airport basic groups
   //
-  // Airport top-level selectors frequently point to regional child
-  // selectors (for example: 日本专线 -> 日本节点).  Keeping only the
-  // top-level group leaves such references dangling and Mihomo rejects
-  // the generated profile with "proxy group [日本节点] not found".
+  // IMPORTANT:
   //
-  // First retain the basic entry groups, then recursively retain every
-  // airport group they reference.  Never force hidden=true.
+  // v1.5.1 fixed the problem where "九云" disappeared.
+  //
+  // Never force hidden=true.
   // ================================================================
 
   var preservedGroups = [];
 
-  var preservedGroupNames = {};
-
-
-  function preserveAirportGroup(group) {
-
-    if (!group || !group.name || managedGroups[group.name]) {
-
-      return;
-
-    }
-
-
-    if (preservedGroupNames[group.name]) {
-
-      return;
-
-    }
-
-
-    var copied =
-      JSON.parse(JSON.stringify(group));
-
-
-    // Keep airport group visible.
-
-    delete copied["hidden"];
-
-
-    preservedGroupNames[group.name] = true;
-
-    preservedGroups.push(copied);
-
-
-    if (!Array.isArray(group.proxies)) {
-
-      return;
-
-    }
-
-
-    group.proxies.forEach(function(item) {
-
-      var dependency =
-        originalGroups.find(function(candidate) {
-
-          return candidate && candidate.name === item;
-
-        });
-
-
-      if (dependency) {
-
-        preserveAirportGroup(dependency);
-
-      }
-
-    });
-
-  }
-
-
-  function hasAirportGroupDependency(group) {
-
-    if (!group || !Array.isArray(group.proxies)) {
-
-      return false;
-
-    }
-
-
-    return group.proxies.some(function(item) {
-
-      return originalGroups.some(function(candidate) {
-
-        return candidate && candidate.name === item;
-
-      });
-
-    });
-
-  }
-
 
   originalGroups.forEach(function(group) {
 
-    if (!group || !group.name || managedGroups[group.name]) {
+    if (!group || !group.name) {
+
+      return;
+
+    }
+
+
+    if (managedGroups[group.name]) {
 
       return;
 
@@ -961,13 +884,23 @@ function main(config) {
       isAllNodesGroup(group);
 
 
-    // A nested airport group is also a required entry point: it may be
-    // selected by a retained selector even when it has few direct nodes.
-    if (isBasic || hasAirportGroupDependency(group)) {
+    if (!isBasic) {
 
-      preserveAirportGroup(group);
+      return;
 
     }
+
+
+    var copied =
+      JSON.parse(JSON.stringify(group));
+
+
+    // Keep airport group visible.
+
+    delete copied["hidden"];
+
+
+    preservedGroups.push(copied);
 
   });
 
