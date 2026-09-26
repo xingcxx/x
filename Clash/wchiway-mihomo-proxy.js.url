@@ -1,0 +1,3 @@
+# wchiway/mihomo-proxy
+# 类型：已有订阅的完整覆写脚本；会覆盖 DNS、TUN、Sniffer、规则和代理组。
+https://raw.githubusercontent.com/wchiway/mihomo-proxy/main/mihomo-proxy.js

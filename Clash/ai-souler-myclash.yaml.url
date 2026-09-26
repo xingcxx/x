@@ -1,0 +1,4 @@
+# AIsouler/MyClash 完整 Mihomo YAML
+# 类型：完整配置；导入后需配置自己的订阅/节点来源。
+# 上游说明要求关闭客户端额外 DNS 覆写。
+https://raw.githubusercontent.com/AIsouler/MyClash/main/Config/mihomoConfig.yaml
