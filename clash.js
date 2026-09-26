@@ -133,63 +133,81 @@ function main(config) {
 
     ],
 
-    // Resolve DNS-server and proxy-server host names without sending
-    // plaintext UDP/53 traffic.  These are numeric IP endpoints so no
-    // system DNS lookup is needed before the profile is available.
+    // Bootstrap only resolver/proxy hostnames with encrypted numeric DoT
+    // endpoints. No system DNS lookup is needed before the profile is ready.
     "default-nameserver": [
 
-      "tls://223.5.5.5:853",
-      "tls://1.12.12.12:853"
+      "tls://1.1.1.1:853",
+      "tls://9.9.9.9:853"
 
     ],
 
-    // Imported Clash Mi profiles support this setting.  Global DoH
-    // queries follow the normal routing rules and therefore the final proxy
-    // group, while the explicit CN/private policy remains direct below.
+    // Send all resolver transports through the selected proxy path. Without
+    // an explicit route tag, `respect-rules` can still let a DNS transport
+    // match a direct CN rule, exposing it to the access network.
     "respect-rules": true,
 
-    // Do not use fallback: it duplicates queries to a second resolver
-    // and can disclose a domain to the wrong DNS path.
+    // Do not let local / system hosts introduce a resolver path outside this
+    // DNS block.  DNS must be served only by the encrypted endpoints below.
+    "use-hosts": false,
+    "use-system-hosts": false,
+
+    // All non-LAN queries use encrypted DNS over the selected proxy group.
+    // `#一键代理` is Mihomo's resolver-dialer tag; the resolver connection is
+    // therefore proxied even when its destination IP matches GEOIP,CN.
     "nameserver": [
 
-      "https://1.1.1.1/dns-query",
-      "https://9.9.9.9/dns-query"
+      "https://1.1.1.1/dns-query#一键代理",
+      "https://9.9.9.9/dns-query#一键代理"
 
     ],
 
+    // Only local/private names use Chinese resolvers, still encrypted. Never
+    // direct all `geosite:cn`: that makes ordinary CN-domain lookups visible
+    // to the local network and is what dnscheck identifies as a DNS leak.
     "nameserver-policy": {
 
-      "geosite:cn,private": [
+      "geosite:private": [
 
-        "https://dns.alidns.com/dns-query",
-        "https://doh.pub/dns-query"
+        "https://dns.alidns.com/dns-query"
 
       ],
 
-      "geosite:geolocation-!cn": [
+      "+.lan": [
 
-        "https://1.1.1.1/dns-query",
-        "https://9.9.9.9/dns-query"
+        "https://dns.alidns.com/dns-query"
+
+      ],
+
+      "+.local": [
+
+        "https://dns.alidns.com/dns-query"
+
+      ],
+
+      "+.localhost": [
+
+        "https://dns.alidns.com/dns-query"
 
       ]
 
     },
 
-    // A proxy endpoint must be resolved before its proxy can connect.
-    // Keep that bootstrap query encrypted and independent of system DNS.
+    // A proxy endpoint must be resolved before its proxy can connect. Use
+    // encrypted numeric DoT endpoints and do not fall back to system DNS.
     "proxy-server-nameserver": [
 
-      "tls://223.5.5.5:853",
-      "tls://1.12.12.12:853"
+      "tls://1.1.1.1:853",
+      "tls://9.9.9.9:853"
 
     ],
 
-    // A dedicated encrypted resolver for direct traffic is compatible with
-    // split-DNS.  `follow-policy` keeps CN/private policy above authoritative.
+    // Direct traffic must not invoke the system/ISP resolver. Its DNS is
+    // encrypted and sent through the main proxy path as well.
     "direct-nameserver": [
 
-      "https://dns.alidns.com/dns-query",
-      "https://doh.pub/dns-query"
+      "https://1.1.1.1/dns-query#一键代理",
+      "https://9.9.9.9/dns-query#一键代理"
 
     ],
 
