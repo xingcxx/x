@@ -105,31 +105,21 @@ function main(config) {
 
     "fake-ip-range": "198.18.0.1/16",
 
+    // Whitelist the *only* names that must receive a real address. The
+    // former blacklist included NTP, Apple and connectivity-test domains;
+    // those bypass Fake-IP and can invoke a physical-interface resolver.
+    // Rule mode makes every other name—including randomized DNS leak-test
+    // hostnames—return Fake-IP and stay inside Mihomo's DNS/routing path.
+    "fake-ip-filter-mode": "rule",
+
     "fake-ip-filter": [
 
-      "+.lan",
-      "+.local",
-      "+.localhost",
-      "+.home.arpa",
-
-      "time.*.com",
-      "time.*.gov",
-      "pool.ntp.org",
-
-      "+.push.apple.com",
-
-      "mesu.apple.com",
-      "swscan.apple.com",
-
-      "captive.apple.com",
-
-      "connectivitycheck.gstatic.com",
-
-      "connectivitycheck.android.com",
-
-      "www.msftconnecttest.com",
-
-      "www.msftncsi.com"
+      "DOMAIN-SUFFIX,lan,real-ip",
+      "DOMAIN-SUFFIX,local,real-ip",
+      "DOMAIN-SUFFIX,localhost,real-ip",
+      "DOMAIN-SUFFIX,home.arpa,real-ip",
+      "GEOSITE,private,real-ip",
+      "MATCH,fake-ip"
 
     ],
 
@@ -162,36 +152,10 @@ function main(config) {
 
     ],
 
-    // Only local/private names use Chinese resolvers, still encrypted. Never
-    // direct all `geosite:cn`: that makes ordinary CN-domain lookups visible
-    // to the local network and is what dnscheck identifies as a DNS leak.
-    "nameserver-policy": {
-
-      "geosite:private": [
-
-        "https://dns.alidns.com/dns-query"
-
-      ],
-
-      "+.lan": [
-
-        "https://dns.alidns.com/dns-query"
-
-      ],
-
-      "+.local": [
-
-        "https://dns.alidns.com/dns-query"
-
-      ],
-
-      "+.localhost": [
-
-        "https://dns.alidns.com/dns-query"
-
-      ]
-
-    },
+    // Do not add a CN/private nameserver-policy here. Any real-IP exception
+    // must not silently select an untagged/direct resolver. LAN hostnames are
+    // retained above only for local reachability; public names all use the
+    // proxied encrypted nameservers.
 
     // A proxy endpoint must be resolved before its proxy can connect. Use
     // encrypted numeric DoT endpoints and do not fall back to system DNS.
@@ -246,10 +210,10 @@ function main(config) {
     // automatically. Do not add custom route-address entries on Apple.
     "auto-detect-interface": true,
 
-    // iOS installs VPN routes itself.  Enabling strict-route or
-    // manually specifying IPv4/IPv6 routes here can send the tunnel's own
-    // transport back into TUN and cause a reconnect loop.
-    "strict-route": false,
+    // Do not leave a second physical route eligible while VPN/TUN is active.
+    // This is the route-level guard for traffic that is not DNS (for example
+    // WebRTC/STUN), which a DNS-only setting cannot contain.
+    "strict-route": true,
 
     "endpoint-independent-nat": true,
 
