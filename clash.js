@@ -41,10 +41,10 @@ function main(config) {
 
   config["log-level"] = "error";
 
-  // Avoid advertising native IPv6 to applications.  On iOS, the VPN
-  // extension owns the TUN routes; the core does not need a custom IPv6 TUN
-  // address for Fake-IP DNS interception.
-  config["ipv6"] = false;
+  // Keep DNS and TUN dual-stack coherent. DNS leak tests deliberately issue
+  // AAAA queries; disabling only Mihomo DNS IPv6 while iOS keeps an IPv6
+  // default route can leave those queries with the physical resolver.
+  config["ipv6"] = true;
 
   config["allow-lan"] = false;
 
@@ -99,11 +99,15 @@ function main(config) {
 
     "prefer-h3": false,
 
-    "ipv6": false,
+    // Match top-level IPv6 and return an IPv6 Fake-IP instead of allowing
+    // the OS resolver to handle AAAA probes outside Mihomo.
+    "ipv6": true,
 
     "enhanced-mode": "fake-ip",
 
     "fake-ip-range": "198.18.0.1/16",
+
+    "fake-ip-range6": "fdfe:dcba:9876::1/64",
 
     // Whitelist the *only* names that must receive a real address. The
     // former blacklist included NTP, Apple and connectivity-test domains;
@@ -206,8 +210,9 @@ function main(config) {
 
     "auto-route": true,
 
-    // When both Wi-Fi and cellular are available, select the physical egress
-    // automatically. Do not add custom route-address entries on Apple.
+    // Keep the default route under the VPN for both address families. On iOS,
+    // the Network Extension controls includeAllNetworks/enforceRoutes; those
+    // app preferences must be enabled alongside this profile.
     "auto-detect-interface": true,
 
     // Do not leave a second physical route eligible while VPN/TUN is active.
