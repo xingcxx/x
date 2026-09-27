@@ -271,9 +271,9 @@ function main(config) {
   // --- 4. 策略组 (Proxy Groups) ---
   const commonProxies = [
     "一键代理", "全局均衡", "家宽节点",
-    "香港手动", "日本手动", "澳门手动", "台湾手动", "韩国手动", "新加坡手动", "美国手动", "欧洲手动",
-    "香港自动", "日本自动", "澳门自动", "台湾自动", "韩国自动", "新加坡自动", "美国自动", "欧洲自动",
-    "香港故转", "日本故转", "澳门故转", "台湾故转", "韩国故转", "新加坡故转", "美国故转", "欧洲故转",
+    "香港手动", "日本手动", "台湾手动", "韩国手动", "新加坡手动", "美国手动", "欧洲手动",
+    "香港自动", "日本自动", "台湾自动", "韩国自动", "新加坡自动", "美国自动", "欧洲自动",
+    "香港故转", "日本故转", "台湾故转", "韩国故转", "新加坡故转", "美国故转", "欧洲故转",
     "其他手动"
   ];
 
@@ -335,10 +335,9 @@ function main(config) {
       filter: homeFilter,
       icon: homeIcon
     },
-    ...["香港", "日本", "澳门", "台湾", "韩国", "新加坡", "美国", "欧洲"].map(region => {
+    ...["香港", "日本", "台湾", "韩国", "新加坡", "美国", "欧洲"].map(region => {
       const iconMap = {
         "香港": "https://raw.githubusercontent.com/lige47/QuanX-icon-rule/main/icon/01Country/Hongkong(3).png",
-        "澳门": "https://raw.githubusercontent.com/lige47/QuanX-icon-rule/main/icon/01Country/Macao.png",
         "台湾": "https://raw.githubusercontent.com/lige47/QuanX-icon-rule/main/icon/01Country/taiwan(4).png",
         "日本": "https://raw.githubusercontent.com/lige47/QuanX-icon-rule/main/icon/01Country/Japan(2).png",
         "韩国": "https://raw.githubusercontent.com/lige47/QuanX-icon-rule/main/icon/01Country/Korea(2).png",
@@ -348,7 +347,6 @@ function main(config) {
       };
       const filterMap = {
         "香港": '^(?i)(?=.*(香港|🇭🇰|\\bHK\\b|Hong(?:\\s?Kong)?|\\bHKG\\b|\\bHKT\\b|\\bHKBN\\b)).*$',
-        "澳门": '^(?i)(?=.*(澳门|澳門|🇲🇴|\\bMO\\b|\\bMFM\\b|Macao|Macau)).*$',
         "台湾": '^(?i)(?=.*(台湾|台灣|🇹🇼|\\bTW\\b|\\bTPE\\b|\\bTSA\\b|\\bKHH\\b|Taiwan|Taipei|Kaohsiung)).*$',
         "日本": '^(?i)(?=.*(日本|🇯🇵|\\bJP\\b|Japan|Tokyo|Osaka|Fukuoka|\\bTYO\\b|\\bOSA\\b|\\bNRT\\b|\\bHND\\b|\\bKIX\\b|\\bCTS\\b|\\bFUK\\b)).*$',
         "韩国": '^(?i)(?=.*(韩国|韓國|🇰🇷|首尔|首爾|\\bKR\\b|\\bKOR\\b|Korea|Seoul|\\bSEL\\b|\\bICN\\b)).*$',
@@ -399,7 +397,7 @@ function main(config) {
       type: "select",
       "include-all": true,
       "exclude-filter": excludeInfoFilter,
-      filter: '^(?i)(?!.*(DIRECT|直接连接|香港|澳门|澳門|台湾|台灣|日本|韩国|韓國|首尔|首爾|新加坡|美国|美國|奥地利|奥地利共和国|比利时|保加利亚|克罗地亚|塞浦路斯|捷克|丹麦|爱沙尼亚|芬兰|法国|德国|希腊|匈牙利|爱尔兰|意大利|拉脱维亚|立陶宛|卢森堡|荷兰|波兰|葡萄牙|罗马尼亚|斯洛伐克|斯洛文尼亚|西班牙|瑞典|英国|Hong(?:\\s?Kong)?|Taiwan|Taipei|Kaohsiung|Macau|Macao|Japan|Tokyo|Osaka|Fukuoka|Korea|Seoul|Singapore|United\\s?States|America|United\\s?Kingdom|England|London|Germany|France|Netherlands|Amsterdam|Frankfurt|Paris|🇭🇰|🇲🇴|🇹🇼|🇸🇬|🇯🇵|🇰🇷|🇺🇸|🇬🇧|🇧🇪|🇨🇿|🇩🇰|🇫🇮|🇫🇷|🇩🇪|🇮🇪|🇮🇹|🇱🇹|🇱🇺|🇳🇱|🇵🇱|🇸🇪|\\bHK\\b|\\bHKG\\b|\\bHKT\\b|\\bHKBN\\b|\\bMO\\b|\\bMFM\\b|\\bTW\\b|\\bTPE\\b|\\bTSA\\b|\\bKHH\\b|\\bJP\\b|\\bTYO\\b|\\bOSA\\b|\\bNRT\\b|\\bHND\\b|\\bKIX\\b|\\bCTS\\b|\\bFUK\\b|\\bKR\\b|\\bKOR\\b|\\bSEL\\b|\\bICN\\b|\\bSG\\b|\\bSGP\\b|\\bSIN\\b|\\bXSP\\b|\\bUS\\b|\\bUSA\\b|\\bNA\\b|\\bUK\\b|\\bGB\\b|\\bGBR\\b|\\bLON\\b|\\bSJC\\b|\\bJFK\\b|\\bLAX\\b|\\bORD\\b|\\bATL\\b|\\bDFW\\b|\\bSFO\\b|\\bMIA\\b|\\bSEA\\b|\\bIAD\\b|\\bCDG\\b|\\bFRA\\b|\\bAMS\\b|\\bMAD\\b|\\bBCN\\b|\\bFCO\\b|\\bMUC\\b|\\bBRU\\b|\\bLHR\\b|\\bLGW\\b)).*$',
+      filter: '^(?i)(?!.*(DIRECT|直接连接|香港|台湾|台灣|日本|韩国|韓國|首尔|首爾|新加坡|美国|美國|奥地利|奥地利共和国|比利时|保加利亚|克罗地亚|塞浦路斯|捷克|丹麦|爱沙尼亚|芬兰|法国|德国|希腊|匈牙利|爱尔兰|意大利|拉脱维亚|立陶宛|卢森堡|荷兰|波兰|葡萄牙|罗马尼亚|斯洛伐克|斯洛文尼亚|西班牙|瑞典|英国|Hong(?:\\s?Kong)?|Taiwan|Taipei|Kaohsiung|Japan|Tokyo|Osaka|Fukuoka|Korea|Seoul|Singapore|United\\s?States|America|United\\s?Kingdom|England|London|Germany|France|Netherlands|Amsterdam|Frankfurt|Paris|🇭🇰|🇹🇼|🇸🇬|🇯🇵|🇰🇷|🇺🇸|🇬🇧|🇧🇪|🇨🇿|🇩🇰|🇫🇮|🇫🇷|🇩🇪|🇮🇪|🇮🇹|🇱🇹|🇱🇺|🇳🇱|🇵🇱|🇸🇪|\\bHK\\b|\\bHKG\\b|\\bHKT\\b|\\bHKBN\\b|\\bTW\\b|\\bTPE\\b|\\bTSA\\b|\\bKHH\\b|\\bJP\\b|\\bTYO\\b|\\bOSA\\b|\\bNRT\\b|\\bHND\\b|\\bKIX\\b|\\bCTS\\b|\\bFUK\\b|\\bKR\\b|\\bKOR\\b|\\bSEL\\b|\\bICN\\b|\\bSG\\b|\\bSGP\\b|\\bSIN\\b|\\bXSP\\b|\\bUS\\b|\\bUSA\\b|\\bNA\\b|\\bUK\\b|\\bGB\\b|\\bGBR\\b|\\bLON\\b|\\bSJC\\b|\\bJFK\\b|\\bLAX\\b|\\bORD\\b|\\bATL\\b|\\bDFW\\b|\\bSFO\\b|\\bMIA\\b|\\bSEA\\b|\\bIAD\\b|\\bCDG\\b|\\bFRA\\b|\\bAMS\\b|\\bMAD\\b|\\bBCN\\b|\\bFCO\\b|\\bMUC\\b|\\bBRU\\b|\\bLHR\\b|\\bLGW\\b)).*$',
       icon: "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Global.png"
     }
   ];
