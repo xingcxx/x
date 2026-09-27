@@ -140,9 +140,13 @@ function main(config) {
   config['external-ui-url'] = 'https://github.com/Zephyruso/zashboard/releases/latest/download/dist-no-fonts.zip';
 
   // ==================== TUN 配置 ====================
+  // 注意: stack 使用 gvisor 而非 mixed。mixed 下 TCP 走系统协议栈、
+  // UDP 走 gVisor,在 iOS/Hako 上曾观察到 TCP 流量绕过隧道直连、
+  // 而 UDP 正常走代理的分裂现象。gvisor 为纯用户态协议栈,
+  // TCP/UDP 统一处理,对隧道捕获最可靠。
   config['tun'] = {
     'enable': true,
-    'stack': 'mixed',
+    'stack': 'gvisor',
     'dns-hijack': ['any:53', 'tcp://any:53'],
     'auto-detect-interface': true,
     'auto-route': true,
