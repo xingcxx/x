@@ -517,6 +517,9 @@ function main(config) {
     "RULE-SET,telegram_domain,Telegram",
     "RULE-SET,line_domain,Telegram",
     "RULE-SET,line_ip,Telegram,no-resolve",
+    // 2026-09-27 实测: WhatsApp App 实际使用 whatsapp.net 系域名,Chunlion 的 whatsapp_domain
+    // 规则集未收录,导致流量掉进 geolocation-!cn 走一键代理。显式置顶修复。
+    "DOMAIN-SUFFIX,whatsapp.net,WhatsApp",
     "RULE-SET,whatsapp_domain,WhatsApp",
     "RULE-SET,whatsapp_ip,WhatsApp,no-resolve",
     "GEOSITE,facebook,Facebook",
