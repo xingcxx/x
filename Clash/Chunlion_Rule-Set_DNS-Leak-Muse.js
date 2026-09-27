@@ -299,7 +299,8 @@ function main(config) {
     { name: "Emby", type: "select", proxies: specialProxies, icon: "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Emby.png" },
     { name: "Apple", type: "select", proxies: commonProxies, icon: "https://raw.githubusercontent.com/Seven1echo/Yaml/main/icons/Apple.png" },
     { name: "Telegram", type: "select", proxies: commonProxies, icon: "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Telegram.png" },
-    { name: "WhatsApp", type: "select", proxies: commonProxies, icon: "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/WhatsApp.png" },
+    { name: "WhatsApp", type: "select", proxies: commonProxies, icon: "https://raw.githubusercontent.com/lige47/QuanX-icon-rule/main/icon/04ProxySoft/whatsapp.png" },
+    { name: "Facebook", type: "select", proxies: commonProxies, icon: "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Facebook.png" },
     { name: "Twitter", type: "select", proxies: commonProxies, icon: "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Twitter.png" },
     { name: "TikTok", type: "select", proxies: commonProxies, icon: "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/TikTok.png" },
     { name: "Microsoft", type: "select", proxies: commonProxies, icon: "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Microsoft.png" },
@@ -520,6 +521,8 @@ function main(config) {
     "RULE-SET,line_ip,Telegram,no-resolve",
     "RULE-SET,whatsapp_domain,WhatsApp",
     "RULE-SET,whatsapp_ip,WhatsApp,no-resolve",
+    "GEOSITE,facebook,Facebook",
+    "GEOIP,facebook,Facebook,no-resolve",
     "RULE-SET,douyin_domain,DIRECT",
     "RULE-SET,tiktok_domain,TikTok",
     "RULE-SET,twitter_domain,Twitter",
@@ -536,6 +539,9 @@ function main(config) {
     "RULE-SET,telegram_ip,Telegram,no-resolve",
     "RULE-SET,twitter_ip,Twitter,no-resolve",
     "RULE-SET,netflix_ip,Streaming,no-resolve",
+    // 2026-09-27 日志实证: 客户端曾把 browserleaks.com 误判进 RuleSet(cn_domain) 走 DIRECT
+    // (上游 cn.mrs 并无该域名,疑似客户端规则集缓存过期)。显式置顶,确保检测站走代理。
+    "DOMAIN-SUFFIX,browserleaks.com,一键代理",
     "RULE-SET,cn_domain,DIRECT",
     "RULE-SET,cn_ip,DIRECT,no-resolve",
     "RULE-SET,geolocation-!cn,一键代理",
