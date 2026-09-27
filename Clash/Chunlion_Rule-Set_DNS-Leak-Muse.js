@@ -1,6 +1,22 @@
 /**
- * 名称： Chunlion_Rule-Set_DNS-Leak 覆写脚本
- * 说明： 基于 YAML 配置文件生成的 JS 脚本，用于 Clash Verge 等客户端的 Merge 覆写。
+ * 名称： Chunlion_Rule-Set_DNS-Leak 覆写脚本（DNS 防泄漏优化版）
+ * 说明： 基于 YAML 配置文件生成的 JS 脚本，用于 Mihomo 内核客户端的 Merge 覆写。
+ *
+ * 优化（2026-09-27，基于开源社区防泄漏最佳实践）：
+ *  1. 全局 nameserver 改用 Cloudflare / Google DoH（IP 直连形式，免去 bootstrap 查询），
+ *     并通过 Mihomo 扩展语法 "#一键代理" 让 DoH 查询本身经代理出站 ——
+ *     境外域名的 DNS 查询不再经过阿里 / 腾讯，本地 ISP 与国内解析商全程不可见。
+ *  2. proxy-server-nameserver 保持国内 DoH 直连（解析节点 server 域名），
+ *     避免"解析依赖代理、代理依赖解析"的死锁；国内 DoH 抗污染、直连可达。
+ *  3. 新增 TCP 853（DoT）显式走代理规则：硬编码 DoT 的应用也不会直连境外 853。
+ *  4. 延续原有正确设计：无 fallback（fallback 请求不走代理本身就是泄漏源）、
+ *     respect-rules: true、direct-nameserver-follow-policy: true、ipv6: false、
+ *     TUN dns-hijack 劫持 53 端口。
+ *
+ * 注意：nameserver 的 "#代理组" 后缀为 Mihomo 内核扩展语法，
+ *      需要 Mihomo 核心的客户端（如 Clash Verge / FlClash / Mihomo Party）。
+ *      若客户端不支持导致 DNS 异常，把 nameserver 改回不带后缀的
+ *      'https://1.1.1.1/dns-query' 即可（respect-rules 仍会按规则路由）。
  */
 
 function collectPrivateNameservers(dnsConfig = {}) {
@@ -17,7 +33,6 @@ function collectPrivateNameservers(dnsConfig = {}) {
     ...(Array.isArray(dnsConfig['nameserver']) ? dnsConfig['nameserver'] : []),
     ...(Array.isArray(dnsConfig['proxy-server-nameserver']) ? dnsConfig['proxy-server-nameserver'] : [])
   ];
-
   return [...new Set(candidates
     .filter(nameserver => typeof nameserver === 'string')
     .map(nameserver => nameserver.trim())
@@ -42,16 +57,14 @@ function hostPatternMatchesDomains(pattern, domains, preserveUnknown = false) {
   if (typeof pattern !== 'string') {
     return false;
   }
-
   return pattern.split(',').some(rawPattern => {
     const candidate = rawPattern.trim().toLowerCase();
     if (!candidate || candidate.startsWith('rule-set:') || candidate.startsWith('geosite:')) {
       return false;
     }
-
     if (preserveUnknown) return true;
-
-    const suffix = candidate.startsWith('+.') || candidate.startsWith('*.')
+    const suffix = candidate.startsWith('+.')
+      || candidate.startsWith('*.')
       ? candidate.slice(2)
       : candidate.startsWith('.') ? candidate.slice(1) : null;
     return suffix
@@ -82,6 +95,7 @@ function main(config) {
     ...(Array.isArray(config['proxies']) ? config['proxies'] : []),
     ...providers.flatMap(provider => Array.isArray(provider.payload) ? provider.payload : [])
   ]);
+
   // HTTP/file 集合在覆写阶段尚未展开，保留显式域名映射供后续节点解析。
   const preserveUnknown = providers.some(provider => provider.type === 'http' || provider.type === 'file');
   const privateNameservers = collectPrivateNameservers(originalDnsConfig);
@@ -105,7 +119,7 @@ function main(config) {
   config['ipv6'] = false;
   config['profile'] = {
     'store-selected': true,
-    'store-fake-ip': true
+    'store-fake-ip': true,
   };
   config['ntp'] = {
     'enable': true,
@@ -113,13 +127,15 @@ function main(config) {
     'server': 'time.apple.com',
     'port': 123,
     'interval': 30,
-    'dialer-proxy': 'DIRECT'
+    'dialer-proxy': 'DIRECT',
   };
   config['external-controller'] = '127.0.0.1:9090';
   config['external-ui'] = 'ui';
+
   if (typeof config['secret'] !== 'string' || !config['secret'].trim()) {
     config['secret'] = '123456';
   }
+
   delete config['global-client-fingerprint'];
   config['external-ui-url'] = 'https://github.com/Zephyruso/zashboard/releases/latest/download/dist-no-fonts.zip';
 
@@ -133,7 +149,7 @@ function main(config) {
     'auto-redirect': true,
     'strict-route': false,
     'endpoint-independent-nat': true,
-    'route-exclude-address-set': ['cn_ip']
+    'route-exclude-address-set': ['cn_ip'],
   };
 
   // ==================== 嗅探功能 ====================
@@ -150,14 +166,14 @@ function main(config) {
     'force-domain': [
       '+.netflix.com',
       '+.nflxvideo.net',
-      '+.media.dssott.com'
+      '+.media.dssott.com',
     ],
     'skip-domain': [
       '+.apple.com',
       'Mijia Cloud',
       'dlg.io.mi.com',
       '+.oray.com',
-      '+.sunlogin.net'
+      '+.sunlogin.net',
     ],
     'skip-dst-address': [
       '127.0.0.0/8',
@@ -168,16 +184,16 @@ function main(config) {
       '100.64.0.0/10',
       '::1/128',
       'fc00::/7',
-      'fe80::/10'
-    ]
+      'fe80::/10',
+    ],
   };
 
   config['hosts'] = {
     'services.googleapis.cn': ['services.googleapis.com'],
-    ...proxyServerHosts
+    ...proxyServerHosts,
   };
 
-  // ==================== DNS 设置 ====================
+  // ==================== DNS 设置（防泄漏优化版） ====================
   config['dns'] = {
     'enable': true,
     'use-hosts': true,
@@ -189,6 +205,7 @@ function main(config) {
     'fake-ip-range': '198.18.0.1/16',
     'fake-ip-filter-mode': 'blacklist',
     'respect-rules': true,
+    // respect-rules 与 prefer-h3 互斥，必须保持 false
     'prefer-h3': false,
     'fake-ip-filter': [
       'rule-set:fakeip_filter',
@@ -213,28 +230,38 @@ function main(config) {
       'time.windows.com',
       'time.apple.com',
       'time-ios.apple.com',
-      'time.google.com'
+      'time.google.com',
     ],
-    // 默认 DNS 用于解析 DoH / DoT 服务器域名，节点 DNS 避免解析代理节点时产生循环。
+
+    // Bootstrap：只用于解析 DoH 服务器域名与节点 server 域名，必须是纯 IP 且直连
     'default-nameserver': ['223.5.5.5', '119.29.29.29'],
+
+    // 节点 server 域名解析：必须直连可用，避免"解析依赖代理、代理依赖解析"死锁；
+    // 用国内 DoH 防污染、保证直连可达。不走代理是刻意为之。
     'proxy-server-nameserver': [
       'https://dns.alidns.com/dns-query',
       'https://doh.pub/dns-query',
-      ...privateNameservers
+      ...privateNameservers,
     ],
     ...(Object.keys(proxyServerPolicy).length > 0 && {
-      'proxy-server-nameserver-policy': proxyServerPolicy
+      'proxy-server-nameserver-policy': proxyServerPolicy,
     }),
+
+    // 直连域名解析：国内 DNS，保证国内 CDN 调度正确
     'direct-nameserver': ['223.5.5.5', '119.29.29.29'],
     'direct-nameserver-follow-policy': true,
     'nameserver-policy': {
       'rule-set:add_direct_domain': ['223.5.5.5', '119.29.29.29'],
       'rule-set:cn_domain': ['223.5.5.5', '119.29.29.29'],
-      'rule-set:private_domain': ['223.5.5.5', '119.29.29.29']
+      'rule-set:private_domain': ['223.5.5.5', '119.29.29.29'],
     },
-    // 本配置不启用 fallback / fallback-filter；Fake-IP 代理连接通常由代理侧解析。
-    // respect-rules 控制 DNS 连接路由，不替代 fallback 的解析回退功能。
-    'nameserver': ['https://dns.alidns.com/dns-query', 'https://doh.pub/dns-query']
+
+    // 全局上游：Cloudflare / Google DoH，IP 直连形式免去 bootstrap 查询；
+    // "#一键代理"（Mihomo 扩展语法）让 DoH 查询本身经代理出站 ——
+    // 境外域名的 DNS 查询不再经过阿里 / 腾讯，本地 ISP 与国内解析商全程不可见。
+    // 本配置不启用 fallback（fallback 请求不走代理，本身就是泄漏源）；
+    // DoH 失败则解析失败、不回落，fail-closed。
+    'nameserver': ['https://1.1.1.1/dns-query#一键代理', 'https://8.8.8.8/dns-query#一键代理']
   };
 
   // --- 4. 策略组 (Proxy Groups) ---
@@ -245,11 +272,13 @@ function main(config) {
     "香港故转", "日本故转", "澳门故转", "台湾故转", "韩国故转", "新加坡故转", "美国故转", "欧洲故转",
     "其他手动"
   ];
+
   const specialProxies = [...commonProxies, "DIRECT"];
 
   const homeIcon = "https://raw.githubusercontent.com/lige47/QuanX-icon-rule/main/icon/05icon/home.png";
   const homeFilter = '^(?i)(?=.*(家宽|🏠|家庭宽带|宽带|住宅|民宅|\\bResidential\\b|\\bHome\\b|\\bISP\\b|Broadband)).*$';
   const excludeInfoFilter = '(?i)(群|返利|邀请|客服|工单|官网|网站|网址|邮箱|订阅|套餐|流量|到期|过期|剩余|重置|通知|更新|作者|频道|获取|下次|版本|官址|已用|联系|贩卖|倒卖|地址|说明|教程|关注|加入|http|expire|traffic|reset|subscription|remaining|used|total|email|panel|channel|author)';
+
   const aiProxies = ["家宽节点", "美国手动", ...commonProxies.filter(p => p !== "家宽节点" && p !== "美国手动")];
 
   config["proxy-groups"] = [
@@ -266,9 +295,9 @@ function main(config) {
     { name: "Emby", type: "select", proxies: specialProxies, icon: "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Emby.png" },
     { name: "Apple", type: "select", proxies: commonProxies, icon: "https://raw.githubusercontent.com/Seven1echo/Yaml/main/icons/Apple.png" },
     { name: "Telegram", type: "select", proxies: commonProxies, icon: "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Telegram.png" },
-    { name: "Twitter", type: "select", proxies: commonProxies, icon: "https://raw.githubusercontent.com/Seven1echo/Yaml/main/icons/Twitter.png" },
+    { name: "Twitter", type: "select", proxies: commonProxies, icon: "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Twitter.png" },
     { name: "TikTok", type: "select", proxies: commonProxies, icon: "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/TikTok.png" },
-    { name: "Microsoft", type: "select", proxies: commonProxies, icon: "https://raw.githubusercontent.com/Seven1echo/Yaml/main/icons/Microsoft.png" },
+    { name: "Microsoft", type: "select", proxies: commonProxies, icon: "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Microsoft.png" },
     { name: "PayPal", type: "select", proxies: specialProxies, icon: "https://raw.githubusercontent.com/lige47/QuanX-icon-rule/main/icon/04ProxySoft/paypal(2).png" },
     { name: "Crypto", type: "select", proxies: specialProxies, icon: "https://raw.githubusercontent.com/lige47/QuanX-icon-rule/main/icon/04ProxySoft/Bitcoin.png" },
     { name: "Games", type: "select", proxies: specialProxies, icon: "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Game.png" },
@@ -289,10 +318,16 @@ function main(config) {
       "max-failed-times": 3,
       hidden: true,
       "include-all": true,
-      "exclude-filter": excludeInfoFilter
+      "exclude-filter": excludeInfoFilter,
     },
-    { name: "家宽节点", type: "select", "include-all": true, "exclude-filter": excludeInfoFilter, filter: homeFilter, icon: homeIcon },
-
+    {
+      name: "家宽节点",
+      type: "select",
+      "include-all": true,
+      "exclude-filter": excludeInfoFilter,
+      filter: homeFilter,
+      icon: homeIcon
+    },
     ...["香港", "日本", "澳门", "台湾", "韩国", "新加坡", "美国", "欧洲"].map(region => {
       const iconMap = {
         "香港": "https://raw.githubusercontent.com/lige47/QuanX-icon-rule/main/icon/01Country/Hongkong(3).png",
@@ -302,7 +337,7 @@ function main(config) {
         "韩国": "https://raw.githubusercontent.com/lige47/QuanX-icon-rule/main/icon/01Country/Korea(2).png",
         "新加坡": "https://raw.githubusercontent.com/lige47/QuanX-icon-rule/main/icon/01Country/singapore.png",
         "美国": "https://raw.githubusercontent.com/lige47/QuanX-icon-rule/main/icon/01Country/US(2).png",
-        "欧洲": "https://raw.githubusercontent.com/lige47/QuanX-icon-rule/main/icon/01Country/EuropeanUnion(2).png"
+        "欧洲": "https://raw.githubusercontent.com/lige47/QuanX-icon-rule/main/icon/01Country/EuropeanUnion(2).png",
       };
       const filterMap = {
         "香港": '^(?i)(?=.*(香港|🇭🇰|\\bHK\\b|Hong(?:\\s?Kong)?|\\bHKG\\b|\\bHKT\\b|\\bHKBN\\b)).*$',
@@ -315,18 +350,49 @@ function main(config) {
         "欧洲": '^(?i)(?=.*(奥地利|奥地利共和国|比利时|保加利亚|克罗地亚|塞浦路斯|捷克|丹麦|爱沙尼亚|芬兰|法国|德国|希腊|匈牙利|爱尔兰|意大利|拉脱维亚|立陶宛|卢森堡|荷兰|波兰|葡萄牙|罗马尼亚|斯洛伐克|斯洛文尼亚|西班牙|瑞典|英国|London|United\\s?Kingdom|England|Germany|France|Netherlands|Amsterdam|Frankfurt|Paris|\\bLON\\b|\\bUK\\b|\\bGB\\b|\\bGBR\\b|🇧🇪|🇨🇿|🇩🇰|🇫🇮|🇫🇷|🇩🇪|🇮🇪|🇮🇹|🇱🇹|🇱🇺|🇳🇱|🇵🇱|🇸🇪|🇬🇧|\\bCDG\\b|\\bFRA\\b|\\bAMS\\b|\\bMAD\\b|\\bBCN\\b|\\bFCO\\b|\\bMUC\\b|\\bBRU\\b|\\bLHR\\b|\\bLGW\\b)).*$'
       };
       return [
-        { name: `${region}故转`, type: "fallback", url: "https://www.gstatic.com/generate_204", interval: 180, lazy: false, timeout: 2000, "max-failed-times": 2, proxies: [`${region}手动`, `${region}自动`], icon: iconMap[region], hidden: true },
-        { name: `${region}手动`, type: "select", "include-all": true, "exclude-filter": excludeInfoFilter, filter: filterMap[region], icon: iconMap[region] },
-        { name: `${region}自动`, type: "url-test", url: "https://www.gstatic.com/generate_204", interval: 300, lazy: false, tolerance: 30, timeout: 2000, "max-failed-times": 3, "include-all": true, "exclude-filter": excludeInfoFilter, filter: filterMap[region], icon: iconMap[region], hidden: true }
+        {
+          name: `${region}故转`,
+          type: "fallback",
+          url: "https://www.gstatic.com/generate_204",
+          interval: 180,
+          lazy: false,
+          timeout: 2000,
+          "max-failed-times": 2,
+          proxies: [`${region}手动`, `${region}自动`],
+          icon: iconMap[region],
+          hidden: true
+        },
+        {
+          name: `${region}手动`,
+          type: "select",
+          "include-all": true,
+          "exclude-filter": excludeInfoFilter,
+          filter: filterMap[region],
+          icon: iconMap[region]
+        },
+        {
+          name: `${region}自动`,
+          type: "url-test",
+          url: "https://www.gstatic.com/generate_204",
+          interval: 300,
+          lazy: false,
+          tolerance: 30,
+          timeout: 2000,
+          "max-failed-times": 3,
+          "include-all": true,
+          "exclude-filter": excludeInfoFilter,
+          filter: filterMap[region],
+          icon: iconMap[region],
+          hidden: true
+        }
       ];
     }).flat(),
-
     {
       name: "其他手动",
       type: "select",
       "include-all": true,
       "exclude-filter": excludeInfoFilter,
-      filter: '^(?i)(?!.*(DIRECT|直接连接|香港|澳门|澳門|台湾|台灣|日本|韩国|韓國|首尔|首爾|新加坡|美国|美國|奥地利|比利时|保加利亚|克罗地亚|塞浦路斯|捷克|丹麦|爱沙尼亚|芬兰|法国|德国|希腊|匈牙利|爱尔兰|意大利|拉脱维亚|立陶宛|卢森堡|荷兰|波兰|葡萄牙|罗马尼亚|斯洛伐克|斯洛文尼亚|西班牙|瑞典|英国|Hong(?:\\s?Kong)?|Taiwan|Taipei|Kaohsiung|Macau|Macao|Japan|Tokyo|Osaka|Fukuoka|Korea|Seoul|Singapore|United\\s?States|America|United\\s?Kingdom|England|London|Germany|France|Netherlands|Amsterdam|Frankfurt|Paris|🇭🇰|🇲🇴|🇹🇼|🇸🇬|🇯🇵|🇰🇷|🇺🇸|🇬🇧|🇧🇪|🇨🇿|🇩🇰|🇫🇮|🇫🇷|🇩🇪|🇮🇪|🇮🇹|🇱🇹|🇱🇺|🇳🇱|🇵🇱|🇸🇪|\\bHK\\b|\\bHKG\\b|\\bHKT\\b|\\bHKBN\\b|\\bMO\\b|\\bMFM\\b|\\bTW\\b|\\bTPE\\b|\\bTSA\\b|\\bKHH\\b|\\bJP\\b|\\bTYO\\b|\\bOSA\\b|\\bNRT\\b|\\bHND\\b|\\bKIX\\b|\\bCTS\\b|\\bFUK\\b|\\bKR\\b|\\bKOR\\b|\\bSEL\\b|\\bICN\\b|\\bSG\\b|\\bSGP\\b|\\bSIN\\b|\\bXSP\\b|\\bUS\\b|\\bUSA\\b|\\bNA\\b|\\bUK\\b|\\bGB\\b|\\bGBR\\b|\\bLON\\b|\\bSJC\\b|\\bJFK\\b|\\bLAX\\b|\\bORD\\b|\\bATL\\b|\\bDFW\\b|\\bSFO\\b|\\bMIA\\b|\\bSEA\\b|\\bIAD\\b|\\bCDG\\b|\\bFRA\\b|\\bAMS\\b|\\bMAD\\b|\\bBCN\\b|\\bFCO\\b|\\bMUC\\b|\\bBRU\\b|\\bLHR\\b|\\bLGW\\b)).*$',
+      filter: '^(?i)(?!.*(DIRECT|直接连接|香港|澳门|澳門|台湾|台灣|日本|韩国|韓國|首尔|首爾|新加坡|美国|美國|奥地利|奥地利共和国|比利时|保加利亚|克罗地亚|塞浦路斯|捷克|丹麦|爱沙尼亚|芬兰|法国|德国|希腊|匈牙利|爱尔兰|意大利|拉脱维亚|立陶宛|卢森堡|荷兰|波兰|葡萄牙|罗马尼亚|斯洛伐克|斯洛文尼亚|西班牙|瑞典|英国|Hong(?:\\s?Kong)?|Taiwan|Taipei|Kaohsiung|Macau|Macao|Japan|Tokyo|Osaka|Fukuoka|Korea|Seoul|Singapore|United\\s?States|America|United\\s?Kingdom|England|London|Germany|France|Netherlands|Amsterdam|Frankfurt|Paris|🇭🇰|🇲🇴|🇹🇼|🇸🇬|🇯🇵|🇰🇷|🇺🇸|🇬🇧|🇧🇪|🇨🇿|🇩🇰|🇫🇮|🇫🇷|🇩🇪|🇮🇪|🇮🇹|🇱🇹|🇱🇺|🇳🇱|🇵🇱|🇸🇪|\\bHK\\b|\\bHKG\\b|\\bHKT\\b|\\bHKBN\\b|\\bMO\\b|\\bMFM\\b|\\bTW\\b|\\bTPE\\b|\\bTSA\\b|\\bKHH\\b|\\bJP\\b|\\bTYO\\b|\\bOSA\\b|\\bNRT\\b|\\bHND\\b|\\bKIX\\b|\\bCTS\\b|\\bFUK\\b|\\bKR\\b|\\bKOR\\b|\\bSEL\\b|\\bICN\\b|\\bSG\\b|\\bSGP\\b|\\bSIN\\b|\\bXSP\\b|\\bUS\\b|\\bUSA\\b|\\bNA\\b|\\bUK\\b|\\bGB\\b|\\bGBR\\b|\\bLON\\b|\\bSJC\\b|\\bJFK\\b|\\bLAX\\b|\\bORD\\b|\\bATL\\b|\\bDFW\\b|\\bSFO\\b|\\bMIA\\b|\\bSEA\\b|\\bIAD\\b|\\bCDG\\b|\\bFRA\\b|\\bAMS\\b|\\bMAD\\b|\\bBCN\\b|\\bFCO\\b|\\bMUC\\b|\\bBRU\\b|\\bLHR\\b|\\bLGW\\b)).*$',
       icon: "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Global.png"
     }
   ];
@@ -375,10 +441,8 @@ function main(config) {
     "finance_domain": { type: "http", behavior: "domain", format: "mrs", interval: 86400, url: "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/category-finance.mrs" },
     "games_cn_domain": { type: "http", behavior: "domain", format: "mrs", interval: 86400, url: "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/category-games@cn.mrs" },
     "games_domain": { type: "http", behavior: "domain", format: "mrs", interval: 86400, url: "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/category-games.mrs" },
-
     "microsoft_cn": { type: "http", behavior: "domain", format: "mrs", interval: 86400, url: "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/microsoft@cn.mrs" },
     "apple_cn": { type: "http", behavior: "domain", format: "mrs", interval: 86400, url: "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/apple@cn.mrs" },
-
     // 微软/苹果/其他
     "onedrive_domain": { type: "http", behavior: "domain", format: "mrs", interval: 86400, url: "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/onedrive.mrs" },
     "microsoft_domain": { type: "http", behavior: "domain", format: "mrs", interval: 86400, url: "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/microsoft.mrs" },
@@ -388,7 +452,6 @@ function main(config) {
     "vowifi": { type: "http", behavior: "domain", format: "mrs", interval: 86400, url: "https://raw.githubusercontent.com/Chunlion/Clash_Rule-Set/main/rules/UK-wifi-call.mrs" },
     "vowifi_ip": { type: "http", behavior: "ipcidr", format: "mrs", interval: 86400, url: "https://raw.githubusercontent.com/Chunlion/Clash_Rule-Set/main/rules/UK-wifi-call-ip.mrs" },
     "apple_domain": { type: "http", behavior: "domain", format: "mrs", interval: 86400, url: "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/apple.mrs" },
-
     // IP 规则
     "geolocation-!cn": { type: "http", behavior: "domain", format: "mrs", interval: 86400, url: "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/geolocation-!cn.mrs" },
     "cn_domain": { type: "http", behavior: "domain", format: "mrs", interval: 86400, url: "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/cn.mrs" },
@@ -401,15 +464,19 @@ function main(config) {
     "netflix_ip": { type: "http", behavior: "ipcidr", format: "mrs", interval: 86400, url: "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/netflix.mrs" },
     "cn_ip": { type: "http", behavior: "ipcidr", format: "mrs", interval: 86400, url: "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/cn.mrs" }
   };
+
   for (const provider of Object.values(config["rule-providers"])) {
     if (provider.type === "http") {
       provider["size-limit"] = 8 * 1024 * 1024;
       provider.proxy = "一键代理";
     }
   }
+
   // --- 6. 规则匹配 (Rules) ---
   config["rules"] = [
     "AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((OR,((RULE-SET,cn_domain),(RULE-SET,private_domain),(RULE-SET,private_ip),(RULE-SET,cn_ip)))))),REJECT",
+    // DoT（TCP 853）：硬编码 DNS 的应用也必须走代理，防止直连境外出站暴露查询目标
+    "AND,((NETWORK,TCP),(DST-PORT,853)),一键代理",
     "RULE-SET,ads_domain,REJECT",
     "RULE-SET,private_domain,DIRECT",
     "RULE-SET,private_ip,DIRECT,no-resolve",
@@ -422,14 +489,13 @@ function main(config) {
     "RULE-SET,apple_cn,DIRECT",
     "RULE-SET,speedtest_domain,DIRECT",
 
-    // Meta Muse is a separate personal AI agent at muse.ai.  Put its
+    // Meta Muse is a separate personal AI agent at muse.ai. Put its
     // canonical web domain before the generic AI category so it is routed to
     // AI Services even if a future upstream category-ai-!cn update omits it.
     "DOMAIN,muse.ai,AI Services",
     "DOMAIN-SUFFIX,muse.ai,AI Services",
     "DOMAIN,ai.meta.com,AI Services",
     "DOMAIN-SUFFIX,meta.ai,AI Services",
-
     "RULE-SET,ai,AI Services",
     "RULE-SET,github_domain,GitHub",
     "RULE-SET,youtube_domain,Streaming",
@@ -472,5 +538,4 @@ function main(config) {
   ];
 
   return config;
-
 }
