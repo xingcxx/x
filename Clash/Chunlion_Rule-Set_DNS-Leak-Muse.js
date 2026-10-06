@@ -153,6 +153,7 @@ function main(config) {
     'auto-redirect': true,
     'strict-route': false,
     'endpoint-independent-nat': true,
+    'mtu': 1500, // 显式设定 MTU 为 1500，避免 macOS 虚拟网卡默认 4064 导致 TCP 分片、丢包及 TLS 握手延迟
     'route-exclude-address-set': ['cn_ip'],
   };
 
@@ -218,9 +219,14 @@ function main(config) {
       '+.3gppnetwork.org',
       '+.lan',
       '+.local',
+      'geosite:cn',
       'rule-set:cn_domain',
       'rule-set:private_domain',
       'rule-set:add_direct_domain',
+      'rule-set:apple_cn',
+      'rule-set:microsoft_cn',
+      'rule-set:games_cn_domain',
+      'rule-set:douyin_domain',
       '+.msftconnecttest.com',
       '+.msftncsi.com',
       'localhost.ptlogin2.qq.com',
@@ -255,33 +261,44 @@ function main(config) {
     'direct-nameserver': ['223.5.5.5', '119.29.29.29'],
     'direct-nameserver-follow-policy': true,
     'nameserver-policy': {
+      'geosite:cn,private,apple@cn,microsoft@cn,category-games@cn': ['223.5.5.5', '119.29.29.29'],
       'rule-set:add_direct_domain': ['223.5.5.5', '119.29.29.29'],
       'rule-set:cn_domain': ['223.5.5.5', '119.29.29.29'],
       'rule-set:private_domain': ['223.5.5.5', '119.29.29.29'],
+      'rule-set:apple_cn': ['223.5.5.5', '119.29.29.29'],
+      'rule-set:microsoft_cn': ['223.5.5.5', '119.29.29.29'],
+      'rule-set:games_cn_domain': ['223.5.5.5', '119.29.29.29'],
+      'rule-set:douyin_domain': ['223.5.5.5', '119.29.29.29'],
     },
 
-    // 全局上游：Cloudflare / Google DoH，IP 直连形式免去 bootstrap 查询；
-    // "#一键代理"（Mihomo 扩展语法）让 DoH 查询本身经代理出站 ——
-    // 境外域名的 DNS 查询不再经过阿里 / 腾讯，本地 ISP 与国内解析商全程不可见。
-    // 本配置不启用 fallback（fallback 请求不走代理，本身就是泄漏源）；
-    // DoH 失败则解析失败、不回落，fail-closed。
-    'nameserver': ['https://1.1.1.1/dns-query#一键代理', 'https://8.8.8.8/dns-query#一键代理']
+    // 全局境外上游：采用多提供商（Google / Cloudflare）DoH + DoT 并发，通过 "#一键代理" 经代理出站
+    // 避免单一 DoH 服务器受到阻断或节点不稳定时导致境外 DNS 完全断流卡死
+    'nameserver': [
+      'https://dns.google/dns-query#一键代理',
+      'https://1.1.1.1/dns-query#一键代理',
+      'https://1.0.0.1/dns-query#一键代理',
+      'https://8.8.8.8/dns-query#一键代理',
+      'tls://8.8.8.8#一键代理'
+    ]
   };
 
   // --- 4. 策略组 (Proxy Groups) ---
+  // 优化顺序：将自动选路与故转组置前，避免默认选到无节点的手动/家宽组
   const commonProxies = [
-    "一键代理", "全局均衡", "家宽节点",
-    "香港手动", "日本手动", "台湾手动", "韩国手动", "新加坡手动", "美国手动", "欧洲手动",
-    "香港自动", "日本自动", "台湾自动", "韩国自动", "新加坡自动", "美国自动", "欧洲自动",
-    "香港故转", "日本故转", "台湾故转", "韩国故转", "新加坡故转", "美国故转", "欧洲故转",
-    "其他手动"
+    "一键代理",
+    "香港自动", "日本自动", "新加坡自动", "美国自动", "台湾自动", "韩国自动", "欧洲自动",
+    "香港故转", "日本故转", "新加坡故转", "美国故转", "台湾故转", "韩国故转", "欧洲故转",
+    "香港手动", "日本手动", "新加坡手动", "美国手动", "台湾手动", "韩国手动", "欧洲手动",
+    "全局均衡", "家宽节点", "其他手动"
   ];
 
   const specialProxies = [...commonProxies, "DIRECT"];
+  const directFirstProxies = ["DIRECT", ...commonProxies];
 
   const homeIcon = "https://raw.githubusercontent.com/lige47/QuanX-icon-rule/main/icon/05icon/home.png";
   const homeFilter = '^(?i)(?=.*(家宽|🏠|家庭宽带|宽带|住宅|民宅|\\bResidential\\b|\\bHome\\b|\\bISP\\b|Broadband)).*$';
-  const excludeInfoFilter = '(?i)(群|返利|邀请|客服|工单|官网|网站|网址|邮箱|订阅|套餐|流量|到期|过期|剩余|重置|通知|更新|作者|频道|获取|下次|版本|官址|已用|联系|贩卖|倒卖|地址|说明|教程|关注|加入|http|expire|traffic|reset|subscription|remaining|used|total|email|panel|channel|author)';
+  // 增强过滤无用占位/提示/公告节点，防止选到断流节点
+  const excludeInfoFilter = '(?i)(群|返利|邀请|客服|工单|官网|网站|网址|邮箱|订阅|套餐|流量|到期|过期|剩余|重置|通知|更新|作者|频道|获取|下次|版本|官址|已用|联系|贩卖|倒卖|地址|说明|教程|关注|加入|建议|卡顿|专线|提示|公告|维护|测试|有效|http|expire|traffic|reset|subscription|remaining|used|total|email|panel|channel|author)';
 
   const aiProxies = ["家宽节点", "美国手动", ...commonProxies.filter(p => p !== "家宽节点" && p !== "美国手动")];
 
@@ -297,14 +314,14 @@ function main(config) {
     { name: "Google", type: "select", proxies: commonProxies, icon: "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Google_Search.png" },
     { name: "AI Services", type: "select", proxies: aiProxies, icon: "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/AI.png" },
     { name: "Emby", type: "select", proxies: specialProxies, icon: "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Emby.png" },
-    { name: "Apple", type: "select", proxies: commonProxies, icon: "https://raw.githubusercontent.com/Seven1echo/Yaml/main/icons/Apple.png" },
+    { name: "Apple", type: "select", proxies: directFirstProxies, icon: "https://raw.githubusercontent.com/Seven1echo/Yaml/main/icons/Apple.png" },
     { name: "Telegram", type: "select", proxies: commonProxies, icon: "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Telegram.png" },
     { name: "WhatsApp", type: "select", proxies: commonProxies, icon: "https://raw.githubusercontent.com/lige47/QuanX-icon-rule/main/icon/04ProxySoft/whatsapp.png" },
     { name: "Facebook", type: "select", proxies: commonProxies, icon: "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Facebook.png" },
     { name: "Instagram", type: "select", proxies: commonProxies, icon: "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Instagram.png" },
     { name: "Twitter", type: "select", proxies: commonProxies, icon: "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Twitter.png" },
     { name: "TikTok", type: "select", proxies: commonProxies, icon: "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/TikTok.png" },
-    { name: "Microsoft", type: "select", proxies: commonProxies, icon: "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Microsoft.png" },
+    { name: "Microsoft", type: "select", proxies: directFirstProxies, icon: "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Microsoft.png" },
     { name: "PayPal", type: "select", proxies: specialProxies, icon: "https://raw.githubusercontent.com/lige47/QuanX-icon-rule/main/icon/04ProxySoft/paypal(2).png" },
     { name: "Crypto", type: "select", proxies: specialProxies, icon: "https://raw.githubusercontent.com/lige47/QuanX-icon-rule/main/icon/04ProxySoft/Bitcoin.png" },
     { name: "Games", type: "select", proxies: specialProxies, icon: "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Game.png" },
@@ -359,10 +376,10 @@ function main(config) {
           name: `${region}故转`,
           type: "fallback",
           url: "https://www.gstatic.com/generate_204",
-          interval: 180,
+          interval: 60,
           lazy: false,
           timeout: 2000,
-          "max-failed-times": 2,
+          "max-failed-times": 1,
           proxies: [`${region}手动`, `${region}自动`],
           icon: iconMap[region],
           hidden: true
@@ -379,11 +396,11 @@ function main(config) {
           name: `${region}自动`,
           type: "url-test",
           url: "https://www.gstatic.com/generate_204",
-          interval: 300,
-          lazy: false,
-          tolerance: 30,
+          interval: 120, // 从 300 秒降低到 120 秒，加快故障感知
+          lazy: true,    // 仅在有网络请求时按需激活测试，降低空闲功耗
+          tolerance: 50,
           timeout: 2000,
-          "max-failed-times": 3,
+          "max-failed-times": 2, // 连续失败 2 次立即切换，不再傻等 15 分钟
           "include-all": true,
           "exclude-filter": excludeInfoFilter,
           filter: filterMap[region],
