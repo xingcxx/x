@@ -198,35 +198,36 @@ function main(config) {
     ...proxyServerHosts,
   };
 
-  // Apple Intelligence / Siri：来自用户提供的 Apple 规则集，统一经非中国出口解析及访问。
-  // DOMAIN 与 DOMAIN-SUFFIX 分开保留，避免把精确匹配意外扩展为泛域名匹配。
-  const appleIntelligenceDomainRules = [
-    'guzzoni.apple.com',
-    'mask-api.fe.apple-dns.net',
-    'mask-api.icloud.com',
-    'mask-t.apple-dns.net',
-    'mask.apple-dns.net',
+  // Apple Intelligence / Siri：按用户给出的 22 条规则原样保留顺序及重复条目。
+  // 不做域名去重；DOMAIN 与 DOMAIN-SUFFIX 的匹配语义分别保留。
+  const appleIntelligenceRules = [
+    ['DOMAIN-SUFFIX', 'mask.icloud.com'],
+    ['DOMAIN-SUFFIX', 'apps.mastic.com'],
+    ['DOMAIN-KEYWORD', 'siri'],
+    ['DOMAIN-SUFFIX', 'apple-relay.akamaized.net'],
+    ['DOMAIN-SUFFIX', 'apple-relay.apple.com'],
+    ['DOMAIN-SUFFIX', 'apple-relay.cloudflare.com'],
+    ['DOMAIN-SUFFIX', 'apple-relay.fastly-edge.com'],
+    ['DOMAIN', 'guzzoni.apple.com'],
+    ['DOMAIN', 'mask-api.fe.apple-dns.net'],
+    ['DOMAIN', 'mask-api.icloud.com'],
+    ['DOMAIN', 'mask-t.apple-dns.net'],
+    ['DOMAIN', 'mask.apple-dns.net'],
+    ['DOMAIN-SUFFIX', 'smoot.apple.com'],
+    ['DOMAIN-SUFFIX', 'apple-relay.apple.com'],
+    ['DOMAIN-SUFFIX', 'apple-relay.cloudflare.com'],
+    ['DOMAIN-SUFFIX', 'apple-relay.tasty-edge.com'],
+    ['DOMAIN-SUFFIX', 'apple-relay.mask.apple-dns.net'],
+    ['DOMAIN-SUFFIX', 'cp4.cloudflare.com'],
+    ['DOMAIN-SUFFIX', 'gspe1-ssl.ls.apple.com'],
+    ['DOMAIN-SUFFIX', 'gateway.icloud.com'],
+    ['DOMAIN-SUFFIX', 'Is.apple.com'],
+    ['DOMAIN-SUFFIX', 'mask-h2.icloud.com'],
   ];
-  const appleIntelligenceSuffixRules = [
-    'mask.icloud.com',
-    'apps.mastic.com',
-    'smoot.apple.com',
-    'apple-relay.akamaized.net',
-    'apple-relay.apple.com',
-    'apple-relay.cloudflare.com',
-    'apple-relay.fastly-edge.com',
-    'apple-relay.tasty-edge.com',
-    'apple-relay.mask.apple-dns.net',
-    'cp4.cloudflare.com',
-    'gspe1-ssl.ls.apple.com',
-    'gateway.icloud.com',
-    'ls.apple.com',
-    'mask-h2.icloud.com',
-  ];
-  const appleIntelligenceDnsDomains = [...new Set([
-    ...appleIntelligenceDomainRules,
-    ...appleIntelligenceSuffixRules,
-  ])];
+  // DOMAIN-KEYWORD 无法使用精确的 DNS policy；其余域名均显式通过境外 DoH 解析。
+  const appleIntelligenceDnsDomains = appleIntelligenceRules
+    .filter(([type]) => type !== 'DOMAIN-KEYWORD')
+    .map(([, domain]) => domain);
   const proxiedPublicDns = [
     'https://dns.google/dns-query#Apple Intelligence',
     'https://1.1.1.1/dns-query#Apple Intelligence',
@@ -552,9 +553,7 @@ function main(config) {
     "RULE-SET,microsoft_cn,DIRECT",
 
     // Siri 关键词：覆盖未列出的 Siri 子域名，强制走 Apple Intelligence 代理组。
-    "DOMAIN-KEYWORD,siri,Apple Intelligence",
-    ...appleIntelligenceDomainRules.map(domain => `DOMAIN,${domain},Apple Intelligence`),
-    ...appleIntelligenceSuffixRules.map(domain => `DOMAIN-SUFFIX,${domain},Apple Intelligence`),
+    ...appleIntelligenceRules.map(([type, domain]) => `${type},${domain},Apple Intelligence`),
     "RULE-SET,apple_cn,DIRECT",
     "RULE-SET,speedtest_domain,DIRECT",
 
