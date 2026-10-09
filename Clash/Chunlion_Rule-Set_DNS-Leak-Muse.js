@@ -200,16 +200,12 @@ function main(config) {
 
   // Apple Intelligence / Siri 必须经非中国出口解析及访问；不要归入 apple@cn。
   const appleIntelligenceDomains = [
-    'gateway.icloud.com',
-    'apple-relay.apple.com',
-    'apple-relay.fastly-edge.com',
-    'apple-relay.cloudflare.com',
-    'guzzoni.apple.com',
-    'cp4.cloudflare.com',
-    'gspe1-ssl.ls.apple.com',
-    'smoot.apple.com',
+    'mask.icloud.com',
+    'apps.mastic.com',
     'apple-relay.akamaized.net',
-    'apple-relay.mask.apple-dns.net',
+    'apple-relay.apple.com',
+    'apple-relay.cloudflare.com',
+    'apple-relay.fastly-edge.com',
   ];
   const proxiedPublicDns = [
     'https://dns.google/dns-query#Apple Intelligence',
@@ -535,7 +531,8 @@ function main(config) {
     "RULE-SET,vowifi_ip,VoWiFi,no-resolve",
     "RULE-SET,microsoft_cn,DIRECT",
 
-    // Siri / Apple Intelligence must precede apple@cn and cn-domain direct rules.
+    // Siri 关键词：覆盖未列出的 Siri 子域名，强制走 Apple Intelligence 代理组。
+    "DOMAIN-KEYWORD,siri,Apple Intelligence",
     ...appleIntelligenceDomains.map(domain => `DOMAIN-SUFFIX,${domain},Apple Intelligence`),
     "RULE-SET,apple_cn,DIRECT",
     "RULE-SET,speedtest_domain,DIRECT",
