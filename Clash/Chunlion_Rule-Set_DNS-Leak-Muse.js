@@ -198,6 +198,27 @@ function main(config) {
     ...proxyServerHosts,
   };
 
+  // Apple Intelligence / Siri 必须经非中国出口解析及访问；不要归入 apple@cn。
+  const appleIntelligenceDomains = [
+    'gateway.icloud.com',
+    'apple-relay.apple.com',
+    'apple-relay.fastly-edge.com',
+    'apple-relay.cloudflare.com',
+    'guzzoni.apple.com',
+    'cp4.cloudflare.com',
+    'gspe1-ssl.ls.apple.com',
+    'smoot.apple.com',
+    'apple-relay.akamaized.net',
+    'apple-relay.mask.apple-dns.net',
+  ];
+  const proxiedPublicDns = [
+    'https://dns.google/dns-query#Apple Intelligence',
+    'https://1.1.1.1/dns-query#Apple Intelligence',
+    'https://1.0.0.1/dns-query#Apple Intelligence',
+    'https://8.8.8.8/dns-query#Apple Intelligence',
+    'tls://8.8.8.8#Apple Intelligence',
+  ];
+
   // ==================== DNS 设置（防泄漏优化版） ====================
   config['dns'] = {
     'enable': true,
@@ -261,6 +282,8 @@ function main(config) {
     'direct-nameserver': ['223.5.5.5', '119.29.29.29'],
     'direct-nameserver-follow-policy': true,
     'nameserver-policy': {
+      // 显式覆盖 apple@cn：Siri/Apple Intelligence 的解析必须从代理出站。
+      ...Object.fromEntries(appleIntelligenceDomains.map(domain => [`+.${domain}`, proxiedPublicDns])),
       'geosite:cn,private,apple@cn,microsoft@cn,category-games@cn': ['223.5.5.5', '119.29.29.29'],
       'rule-set:add_direct_domain': ['223.5.5.5', '119.29.29.29'],
       'rule-set:cn_domain': ['223.5.5.5', '119.29.29.29'],
@@ -294,6 +317,8 @@ function main(config) {
 
   const specialProxies = [...commonProxies, "DIRECT"];
   const directFirstProxies = ["DIRECT", ...commonProxies];
+  // Siri/Apple Intelligence 不提供 DIRECT，避免误选中国直连出口。
+  const foreignProxies = [...commonProxies];
 
   const homeIcon = "https://raw.githubusercontent.com/lige47/QuanX-icon-rule/main/icon/05icon/home.png";
   const homeFilter = '^(?i)(?=.*(家宽|🏠|家庭宽带|宽带|住宅|民宅|\\bResidential\\b|\\bHome\\b|\\bISP\\b|Broadband)).*$';
@@ -314,6 +339,7 @@ function main(config) {
     { name: "Google", type: "select", proxies: commonProxies, icon: "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Google_Search.png" },
     { name: "AI Services", type: "select", proxies: aiProxies, icon: "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/AI.png" },
     { name: "Emby", type: "select", proxies: specialProxies, icon: "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Emby.png" },
+    { name: "Apple Intelligence", type: "select", proxies: foreignProxies, icon: "https://raw.githubusercontent.com/Seven1echo/Yaml/main/icons/Apple.png" },
     { name: "Apple", type: "select", proxies: directFirstProxies, icon: "https://raw.githubusercontent.com/Seven1echo/Yaml/main/icons/Apple.png" },
     { name: "Telegram", type: "select", proxies: commonProxies, icon: "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Telegram.png" },
     { name: "WhatsApp", type: "select", proxies: commonProxies, icon: "https://raw.githubusercontent.com/lige47/QuanX-icon-rule/main/icon/04ProxySoft/whatsapp.png" },
@@ -508,6 +534,9 @@ function main(config) {
     "RULE-SET,vowifi,VoWiFi",
     "RULE-SET,vowifi_ip,VoWiFi,no-resolve",
     "RULE-SET,microsoft_cn,DIRECT",
+
+    // Siri / Apple Intelligence must precede apple@cn and cn-domain direct rules.
+    ...appleIntelligenceDomains.map(domain => `DOMAIN-SUFFIX,${domain},Apple Intelligence`),
     "RULE-SET,apple_cn,DIRECT",
     "RULE-SET,speedtest_domain,DIRECT",
 
