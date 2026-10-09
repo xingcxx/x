@@ -198,15 +198,35 @@ function main(config) {
     ...proxyServerHosts,
   };
 
-  // Apple Intelligence / Siri 必须经非中国出口解析及访问；不要归入 apple@cn。
-  const appleIntelligenceDomains = [
+  // Apple Intelligence / Siri：来自用户提供的 Apple 规则集，统一经非中国出口解析及访问。
+  // DOMAIN 与 DOMAIN-SUFFIX 分开保留，避免把精确匹配意外扩展为泛域名匹配。
+  const appleIntelligenceDomainRules = [
+    'guzzoni.apple.com',
+    'mask-api.fe.apple-dns.net',
+    'mask-api.icloud.com',
+    'mask-t.apple-dns.net',
+    'mask.apple-dns.net',
+  ];
+  const appleIntelligenceSuffixRules = [
     'mask.icloud.com',
     'apps.mastic.com',
+    'smoot.apple.com',
     'apple-relay.akamaized.net',
     'apple-relay.apple.com',
     'apple-relay.cloudflare.com',
     'apple-relay.fastly-edge.com',
+    'apple-relay.tasty-edge.com',
+    'apple-relay.mask.apple-dns.net',
+    'cp4.cloudflare.com',
+    'gspe1-ssl.ls.apple.com',
+    'gateway.icloud.com',
+    'ls.apple.com',
+    'mask-h2.icloud.com',
   ];
+  const appleIntelligenceDnsDomains = [...new Set([
+    ...appleIntelligenceDomainRules,
+    ...appleIntelligenceSuffixRules,
+  ])];
   const proxiedPublicDns = [
     'https://dns.google/dns-query#Apple Intelligence',
     'https://1.1.1.1/dns-query#Apple Intelligence',
@@ -279,7 +299,7 @@ function main(config) {
     'direct-nameserver-follow-policy': true,
     'nameserver-policy': {
       // 显式覆盖 apple@cn：Siri/Apple Intelligence 的解析必须从代理出站。
-      ...Object.fromEntries(appleIntelligenceDomains.map(domain => [`+.${domain}`, proxiedPublicDns])),
+      ...Object.fromEntries(appleIntelligenceDnsDomains.map(domain => [`+.${domain}`, proxiedPublicDns])),
       'geosite:cn,private,apple@cn,microsoft@cn,category-games@cn': ['223.5.5.5', '119.29.29.29'],
       'rule-set:add_direct_domain': ['223.5.5.5', '119.29.29.29'],
       'rule-set:cn_domain': ['223.5.5.5', '119.29.29.29'],
@@ -533,7 +553,8 @@ function main(config) {
 
     // Siri 关键词：覆盖未列出的 Siri 子域名，强制走 Apple Intelligence 代理组。
     "DOMAIN-KEYWORD,siri,Apple Intelligence",
-    ...appleIntelligenceDomains.map(domain => `DOMAIN-SUFFIX,${domain},Apple Intelligence`),
+    ...appleIntelligenceDomainRules.map(domain => `DOMAIN,${domain},Apple Intelligence`),
+    ...appleIntelligenceSuffixRules.map(domain => `DOMAIN-SUFFIX,${domain},Apple Intelligence`),
     "RULE-SET,apple_cn,DIRECT",
     "RULE-SET,speedtest_domain,DIRECT",
 
