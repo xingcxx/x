@@ -357,6 +357,8 @@ function main(config) {
     { name: "AI Services", type: "select", proxies: aiProxies, icon: "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/AI.png" },
     { name: "Emby", type: "select", proxies: specialProxies, icon: "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Emby.png" },
     { name: "Apple Intelligence", type: "select", proxies: foreignProxies, icon: "https://raw.githubusercontent.com/Seven1echo/Yaml/main/icons/Apple.png" },
+    // Apple Maps default DIRECT；需要境外地图数据时可在客户端切换为一键代理。
+    { name: "Apple Maps", type: "select", proxies: directFirstProxies, icon: "https://raw.githubusercontent.com/Seven1echo/Yaml/main/icons/Apple.png" },
     { name: "Apple", type: "select", proxies: directFirstProxies, icon: "https://raw.githubusercontent.com/Seven1echo/Yaml/main/icons/Apple.png" },
     { name: "Telegram", type: "select", proxies: commonProxies, icon: "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Telegram.png" },
     { name: "WhatsApp", type: "select", proxies: commonProxies, icon: "https://raw.githubusercontent.com/lige47/QuanX-icon-rule/main/icon/04ProxySoft/whatsapp.png" },
@@ -554,6 +556,11 @@ function main(config) {
 
     // Siri 关键词：覆盖未列出的 Siri 子域名，强制走 Apple Intelligence 代理组。
     ...appleIntelligenceRules.map(([type, domain]) => `${type},${domain},Apple Intelligence`),
+    // Apple Maps must precede apple@cn DIRECT: default is direct; switch its group to 一键代理 for overseas map data.
+    "DOMAIN-SUFFIX,ls.apple.com,Apple Maps",
+    "DOMAIN-SUFFIX,ls-apple.com,Apple Maps",
+    "DOMAIN-SUFFIX,maps.apple.com,Apple Maps",
+    "DOMAIN-SUFFIX,apple-mapkit.com,Apple Maps",
     "RULE-SET,apple_cn,DIRECT",
     "RULE-SET,speedtest_domain,DIRECT",
 
