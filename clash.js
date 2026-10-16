@@ -86,7 +86,7 @@ function main(config) {
   // ================================================================
   // 3. DNS
   //
-  // All upstream DNS uses DoH/DoT.  `respect-rules` makes the DNS
+  // Public queries use AdGuard DNS over DoH for common ad/tracker blocking. Bootstrap remains encrypted numeric DoT. `respect-rules` makes the DNS
   // connection itself follow this profile's routing rules; the sole
   // unavoidable bootstrap path (proxy host names) is also encrypted.
   // ================================================================
@@ -151,8 +151,8 @@ function main(config) {
     // therefore proxied even when its destination IP matches GEOIP,CN.
     "nameserver": [
 
-      "https://1.1.1.1/dns-query#一键代理",
-      "https://9.9.9.9/dns-query#一键代理"
+      "https://dns.adguard-dns.com/dns-query#一键代理",
+      "https://dns.adguard-dns.com/dns-query#一键代理"
 
     ],
 
@@ -174,8 +174,8 @@ function main(config) {
     // encrypted and sent through the main proxy path as well.
     "direct-nameserver": [
 
-      "https://1.1.1.1/dns-query#一键代理",
-      "https://9.9.9.9/dns-query#一键代理"
+      "https://dns.adguard-dns.com/dns-query#一键代理",
+      "https://dns.adguard-dns.com/dns-query#一键代理"
 
     ],
 
